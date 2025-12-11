@@ -20,25 +20,28 @@
 
 ```
 deepstory-04/
-├── src/
-│   ├── components/          # UI组件
-│   │   ├── StepCard.tsx     # 步骤卡片组件
-│   │   ├── MarkdownViewer.tsx  # Markdown渲染组件
-│   │   ├── WritingStep.tsx  # 正文创作步骤组件
-│   │   └── Modals.tsx       # 模态框组件
-│   ├── services/            # 服务层
-│   │   └── apiService.ts    # API调用服务
-│   ├── App.tsx              # 主应用组件
-│   ├── constants.ts         # 常量定义
-│   ├── types.ts             # 类型定义
-│   ├── main.tsx             # 应用入口
-│   └── index.css            # 全局样式
-├── index.html               # HTML入口文件
-├── package.json             # 项目配置和依赖
-├── vite.config.ts           # Vite配置
-├── tailwind.config.js       # TailwindCSS配置
-├── postcss.config.js        # PostCSS配置
-└── tsconfig.json            # TypeScript配置
+├── components/          # UI组件
+│   ├── StepCard.tsx     # 步骤卡片组件
+│   ├── MarkdownViewer.tsx  # Markdown渲染组件
+│   ├── WritingStep.tsx  # 正文创作步骤组件
+│   ├── Modals.tsx       # 模态框组件
+│   └── CustomAlert.tsx  # 自定义提示组件
+├── services/            # 服务层
+│   └── apiService.ts    # API调用服务
+├── public/              # 静态资源
+│   └── unclecatlogo.png     # 项目logo
+├── docs/                # 项目文档
+├── App.tsx              # 主应用组件
+├── constants.ts         # 常量定义
+├── types.ts             # 类型定义
+├── index.tsx            # 应用入口
+├── style.css            # 全局样式
+├── index.html           # HTML入口文件
+├── package.json         # 项目配置和依赖
+├── vite.config.ts       # Vite配置
+├── tailwind.config.js   # TailwindCSS配置
+├── postcss.config.js    # PostCSS配置
+└── tsconfig.json        # TypeScript配置
 ```
 
 ### 2.1 核心文件说明
@@ -227,6 +230,10 @@ export interface StateArchive {
 | loadingMessage | string | "" | 加载提示信息 |
 | judgeResult | string | "" | 判官审题的结果 |
 | showJudgeModal | boolean | false | 是否显示判官结果模态框 |
+| isSidebarOpen | boolean | false | 控制移动端侧边栏显示/隐藏 |
+| writingStepState | object | { viewChapter: 1, selectedTheme: null } | 正文创作步骤状态 |
+| isInitCompleted | boolean | false | 创作初始化是否完成 |
+| stepCustomInstructions | Record<string, string> | {} | 各步骤的自定义修改要求 |
 
 ### 5.2 状态更新逻辑
 
@@ -252,7 +259,8 @@ export const PROMPTS = {
   STATE_INIT: `# 角色状态管理专家...`,
   STATE_UPDATE: `# 小说上下文同步与状态更新专家...`,
   CHAPTER_1: `# 首章内容创作专家...`,
-  CHAPTER_NEXT: `# 后续章节创作专家...`
+  CHAPTER_NEXT: `# 后续章节创作专家...`,
+  HUMANIZE_REWRITE: `# 人性化改写专家...`
 };
 ```
 
@@ -402,9 +410,92 @@ const openCustomModal = (title: string, callback: (val: string) => void) => {
 onClick={() => openCustomModal(STEPS[currentStep].title, (val) => handleGenerateStep(currentStepId, val))}
 ```
 
-## 9. 组件通信
+### 8.4 人性化改写功能
 
-### 9.1 组件层级结构
+**实现组件**：`WritingStep.tsx`
+**功能**：基于用户提供的范文风格，将生硬的文本改写为更自然、流畅的中文表达
+**核心状态**：
+- `isHumanizeRewriting`: 控制是否正在进行人性化改写
+- `humanizePrompt`: 保存用户输入的范文
+- `showHumanizeInput`: 控制是否显示人性化改写输入框
+
+**核心逻辑**：
+1. 用户点击"人性化改写"按钮
+2. 显示范文输入框
+3. 用户输入范文
+4. 调用`generateContent`函数，使用`HUMANIZE_REWRITE`提示词模板
+5. 处理AI生成的改写结果
+6. 更新章节内容
+
+**关键代码**：
+```typescript
+const handleHumanizeRewrite = async () => {
+  // ...
+  const template = PROMPTS.HUMANIZE_REWRITE;
+  const variables = {
+    humanize_prompt: humanizePrompt,
+    original_content: currentChapter.content
+  };
+  const prompt = formatPrompt(template, variables);
+  const result = await generateContent("", prompt, apiConfig);
+  // ... 更新章节内容
+};
+```
+
+## 9. 响应式设计和移动端适配
+
+### 9.1 移动端侧边栏实现
+
+**功能**：在小屏幕设备上提供可折叠的侧边栏，方便用户导航
+**实现组件**：`App.tsx`
+**核心状态**：
+- `isSidebarOpen`: 控制侧边栏的显示/隐藏
+
+**核心逻辑**：
+1. 检测屏幕尺寸，在小屏幕上显示侧边栏折叠按钮
+2. 点击按钮时切换`isSidebarOpen`状态
+3. 根据`isSidebarOpen`状态控制侧边栏的显示/隐藏和遮罩层
+4. 点击遮罩层时关闭侧边栏
+
+**关键代码**：
+```typescript
+// 控制移动端侧边栏显示/隐藏
+const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+// 侧边栏渲染逻辑
+{
+  isSidebarOpen && (
+    <div className="fixed inset-0 bg-black/50 z-20 lg:hidden" onClick={() => setIsSidebarOpen(false)} />
+  )
+}
+<aside className={`
+  fixed lg:relative top-0 left-0 h-full bg-stone-900 text-white z-30
+  transform transition-transform duration-300 ease-in-out
+  ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+  w-64 lg:w-72
+`}>
+  {/* 侧边栏内容 */}
+</aside>
+```
+
+### 9.2 响应式布局设计
+
+**实现方式**：使用Tailwind CSS的响应式工具类
+**核心策略**：
+1. 针对不同屏幕尺寸使用不同的布局类（sm:, md:, lg:, xl:）
+2. 在小屏幕上使用垂直布局，大屏幕上使用水平布局
+3. 调整字体大小和间距，提高移动端可读性
+4. 优化按钮和交互元素的尺寸，适配触摸操作
+
+**关键实现**：
+- 响应式容器：`container mx-auto px-4 sm:px-6 lg:px-8`
+- 响应式网格：`grid grid-cols-1 lg:grid-cols-3 gap-4`
+- 响应式字体：`text-base sm:text-lg lg:text-xl`
+- 响应式间距：`p-2 sm:p-4 lg:p-6`
+
+## 10. 组件通信
+
+### 10.1 组件层级结构
 
 ```
 App
@@ -419,16 +510,16 @@ App
 └── PlotStructureModal
 ```
 
-### 9.2 组件通信方式
+### 10.2 组件通信方式
 
 1. **Props传递**：父组件通过props向子组件传递数据和回调函数
 2. **状态提升**：将共享状态提升到最近的公共父组件
 3. **Ref引用**：使用useRef保存回调函数，确保同步更新
 4. **事件回调**：通过回调函数实现子组件向父组件通信
 
-## 10. 核心API调用
+## 11. 核心API调用
 
-### 10.1 AI API调用流程
+### 11.1 AI API调用流程
 
 ```mermaid
 flowchart TD
@@ -451,9 +542,9 @@ flowchart TD
 | max_tokens | number | 生成内容的最大长度 |
 | model | string | 使用的AI模型名称 |
 
-## 11. 性能优化
+## 12. 性能优化
 
-### 11.1 优化措施
+### 12.1 优化措施
 
 1. **异步加载**：AI生成过程使用异步函数，不阻塞主线程
 2. **状态管理优化**：合理使用React状态，避免不必要的重渲染
@@ -465,9 +556,9 @@ flowchart TD
 
 通过`isGenerating`、`isJudging`、`isSyncingContext`等状态变量管理加载状态，显示相应的加载提示，提升用户体验。
 
-## 12. 开发和构建
+## 13. 开发和构建
 
-### 12.1 开发命令
+### 13.1 开发命令
 
 | 命令 | 功能 |
 |------|------|
@@ -484,9 +575,9 @@ flowchart TD
 4. 生成dist目录，包含可部署的静态文件
 5. 生成index.html文件，引入打包后的JavaScript文件
 
-## 13. 核心功能的输入输出示例
+## 14. 核心功能的输入输出示例
 
-### 13.1 核心DNA生成
+### 14.1 核心DNA生成
 
 **输入**：
 ```
@@ -537,9 +628,9 @@ flowchart TD
 2. **核心DNA重写建议**：当一个拥有"因果律保险"能力的推销员...
 ```
 
-## 14. 学习指南
+## 15. 学习指南
 
-### 14.1 代码学习路径
+### 15.1 代码学习路径
 
 1. **先学基础文件**：
    - `types.ts`：了解数据结构
@@ -573,7 +664,7 @@ flowchart TD
    - 在`PROMPTS`中添加对应的提示词模板
    - 实现新的生成逻辑
 
-## 15. 总结
+## 16. 总结
 
 本项目是一个功能完整、架构清晰的AI小说创作助手，通过React + TypeScript实现了从灵感初始化到正文创作的全流程AI辅助。项目采用模块化设计，便于扩展和维护。
 

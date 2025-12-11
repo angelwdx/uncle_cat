@@ -8,6 +8,7 @@ DeepStory AI 是一个基于 AI 驱动的智能小说创作平台，旨在帮助
 - 前端框架：React 19
 - 类型系统：TypeScript
 - 构建工具：Vite
+- 样式框架：Tailwind CSS
 - UI 组件：lucide-react 图标库
 - API 集成：支持 Gemini 和 OpenAI 兼容接口
 - 状态管理：React 内置状态管理
@@ -50,11 +51,19 @@ DeepStory AI 提供了一个结构化的八步创作流程，引导用户从初�
 - **魔鬼编辑**：模拟专业编辑审阅，提供润色和重构建议
 - **读者反馈模拟**：支持输入修改意见并重写章节
 - **题材公式推荐**：根据章节内容推荐合适的题材公式
+- **人性化改写**：基于用户提供的范文风格，将生硬的文本改写为更自然、流畅的中文表达
 
 #### 2.2.5 状态管理
 - 角色状态档案：跟踪角色的物品、能力、状态和关系
 - 状态历史记录：保存不同章节的状态快照，支持回溯查看
 - 上下文同步：根据章节内容自动更新全局摘要和角色状态
+
+#### 2.2.6 响应式设计和移动端适配
+- 优化的移动端布局，适配各种屏幕尺寸
+- 移动端侧边栏，支持展开/折叠切换
+- 响应式字体大小和间距，提高移动端可读性
+- 触摸友好的交互设计，适配移动设备操作习惯
+- 环境变量控制的功能显示，支持构建不同版本
 
 ## 3. 参数设置与传递
 
@@ -97,23 +106,30 @@ DeepStory AI 提供了一个结构化的八步创作流程，引导用户从初�
 ## 4. 项目结构
 
 ```
-deepstory-build/
+deepstory-04/
 ├── components/          # React 组件
 │   ├── MarkdownViewer.tsx   # Markdown 渲染组件
 │   ├── Modals.tsx           # 各种模态框组件
 │   ├── StepCard.tsx         # 步骤卡片组件
 │   ├── WritingStep.tsx      # 章节写作组件
-│   ├── DnaVisualizer.tsx    # DNA 可视化组件
-│   └── WorldVisualizer.tsx  # 世界观可视化组件
+│   ├── CustomAlert.tsx      # 自定义提示组件
+│   └── ...                  # 其他组件
 ├── services/           # 服务层
 │   └── apiService.ts        # API 调用和数据处理
+├── public/             # 静态资源
+│   └── unclecatlogo.png     # 项目logo
+├── docs/               # 项目文档
 ├── App.tsx             # 主应用组件
 ├── constants.ts        # 常量和预设配置
 ├── types.ts            # 类型定义
+├── index.tsx           # 应用入口
+├── style.css           # 全局样式
 ├── index.html          # HTML 入口文件
 ├── package.json        # 项目配置和依赖
 ├── tsconfig.json       # TypeScript 配置
-└── vite.config.ts      # Vite 配置
+├── vite.config.ts      # Vite 配置
+├── tailwind.config.js  # Tailwind CSS 配置
+└── postcss.config.js   # PostCSS 配置
 ```
 
 ## 5. 核心 API 与函数
@@ -152,6 +168,16 @@ deepstory-build/
 - `text`：AI 生成的原始文本
 
 **返回值**：清理后的文本
+
+### 5.4 项目导入/导出功能
+
+**功能**：支持将项目数据导出为 JSON 文件，以及从 JSON 文件导入项目
+
+**实现细节**：
+- 导出功能将所有创作数据（用户输入、生成内容、章节信息等）打包为 JSON 文件
+- 导入功能解析 JSON 文件，恢复项目状态和创作进度
+- 包含数据验证机制，确保导入的文件格式正确
+- 支持跨设备数据迁移和备份
 
 ## 6. 优化建议
 
