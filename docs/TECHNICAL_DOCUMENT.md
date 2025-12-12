@@ -1,680 +1,404 @@
-# AI小说创作助手 - 技术文档
+# 猫叔智能小说创作助手技术文档
 
 ## 1. 项目概述
 
-### 1.1 项目简介
-本项目是一个基于React + TypeScript开发的AI小说创作助手，支持从灵感初始化到正文创作的全流程AI辅助。通过调用外部AI API，实现了核心DNA生成、角色设计、世界观构建等功能。
+猫叔智能小说创作助手（原名DeepStory AI）是一个基于AI驱动的智能小说创作平台，帮助作者完成从创意构思到章节写作的全流程创作。该平台集成了多种AI模型，提供了完整的小说创作工作流，包括核心架构生成、角色设计、世界观构建、情节架构和章节写作等功能。
 
-### 1.2 技术栈
-| 类别 | 技术 | 版本 |
-|------|------|------|
-| 前端框架 | React | ^19.2.1 |
-| 语言 | TypeScript | ~5.8.2 |
-| 构建工具 | Vite | ^6.2.0 |
-| UI组件 | lucide-react | ^0.555.0 |
-| Markdown渲染 | ReactMarkdown | ^10.1.0 |
-| 样式框架 | TailwindCSS | ^4.1.17 |
-| API调用 | 自定义实现 | - |
+### 技术栈
+- **前端框架**：React 19
+- **类型系统**：TypeScript
+- **构建工具**：Vite
+- **样式框架**：Tailwind CSS
+- **UI组件**：lucide-react图标库
+- **API集成**：支持Google Gemini、OpenAI、Claude、DeepSeek等多种AI提供商
+- **状态管理**：React内置状态管理
 
-## 2. 文件结构
+## 2. 项目结构
 
 ```
-deepstory-04/
-├── components/          # UI组件
-│   ├── StepCard.tsx     # 步骤卡片组件
-│   ├── MarkdownViewer.tsx  # Markdown渲染组件
-│   ├── WritingStep.tsx  # 正文创作步骤组件
-│   ├── Modals.tsx       # 模态框组件
-│   └── CustomAlert.tsx  # 自定义提示组件
-├── services/            # 服务层
-│   └── apiService.ts    # API调用服务
-├── public/              # 静态资源
-│   └── unclecatlogo.png     # 项目logo
-├── docs/                # 项目文档
-├── App.tsx              # 主应用组件
-├── constants.ts         # 常量定义
-├── types.ts             # 类型定义
-├── index.tsx            # 应用入口
-├── style.css            # 全局样式
-├── index.html           # HTML入口文件
-├── package.json         # 项目配置和依赖
-├── vite.config.ts       # Vite配置
-├── tailwind.config.js   # TailwindCSS配置
-├── postcss.config.js    # PostCSS配置
-└── tsconfig.json        # TypeScript配置
+uncle_cat/
+├── components/          # React 组件
+├── services/           # 服务层
+├── public/             # 静态资源
+├── docs/               # 项目文档
+├── App.tsx             # 主应用组件
+├── constants.ts        # 常量定义
+├── types.ts            # 类型定义
+├── index.html          # HTML 入口文件
+├── index.tsx           # React 入口文件
+├── style.css           # 全局样式
+├── package.json        # 项目配置
+├── tsconfig.json       # TypeScript 配置
+├── vite.config.ts      # Vite 配置
+└── postcss.config.js   # PostCSS 配置
 ```
 
-### 2.1 核心文件说明
+### 2.1 核心目录说明
 
-| 文件 | 主要功能 |
-|------|----------|
-| App.tsx | 主应用组件，管理创作流程和状态 |
-| constants.ts | 定义提示词模板、标签、故事基调等常量 |
-| types.ts | 定义数据类型和接口 |
-| services/apiService.ts | 实现AI API调用逻辑 |
-| components/Modals.tsx | 实现各种模态框，如判官审题结果、自定义请求等 |
-| components/MarkdownViewer.tsx | 渲染Markdown格式的AI生成结果 |
+| 目录/文件 | 用途 |
+|-----------|------|
+| `components/` | React组件目录，包含UI组件和业务组件 |
+| `services/` | 服务层，处理API调用和数据处理逻辑 |
+| `public/` | 静态资源，包含图片、图标等 |
+| `docs/` | 项目文档，包含技术文档、用户指南等 |
+| `App.tsx` | 主应用组件，管理应用状态和路由 |
+| `constants.ts` | 常量定义，包含提示词模板、题材库等 |
+| `types.ts` | TypeScript类型定义，定义核心数据结构 |
+| `vite.config.ts` | Vite构建配置 |
 
-## 3. 运行逻辑
+## 3. 核心功能模块
 
-### 3.1 应用启动流程
+### 3.1 创作工作流
 
-```mermaid
-flowchart TD
-    A[用户访问index.html] --> B[加载main.tsx]
-    B --> C[渲染App组件]
-    C --> D[初始化状态]
-    D --> E[渲染当前步骤页面]
-    E --> F[用户操作]
-    F --> G[调用AI API]
-    G --> H[更新状态]
-    H --> I[重新渲染页面]
-```
+猫叔智能小说创作助手提供了结构化的八步创作流程，引导用户从初始创意到完整小说：
 
-### 3.2 创作流程实现
+1. **创作初始化**：设置故事主题、题材、基调、结局、叙事视角、章节数和每章字数
+2. **核心DNA**：生成故事的核心公式，定义故事的基本框架
+3. **角色动力学**：设计具有复杂关系和成长弧线的角色群
+4. **世界观**：构建支撑故事发展的三维世界体系
+5. **情节架构**：设计整体剧情结构，支持多种情节结构模板
+6. **章节蓝图**：生成详细的章节规划，包括每章的定位、作用和悬念设计
+7. **角色状态库**：管理角色的动态状态和发展
+8. **正文创作**：生成和编辑小说章节，支持多轮修改和上下文同步
 
-创作流程包含8个核心步骤，通过`STEPS`常量定义：
+### 3.2 核心功能
+
+#### 3.2.1 AI内容生成
+- 基于预设提示词模板生成各种故事元素
+- 支持多种AI模型提供商
+- 支持自定义提示词和模板
+- 实现了智能重试机制，提高API调用成功率
+- 支持动态调整生成参数
+
+#### 3.2.2 可视化展示
+- **Markdown渲染**：支持Markdown格式的内容展示
+- **DNA可视化**：以特殊格式展示故事核心DNA
+- **世界观可视化**：直观展示世界观构建内容
+
+#### 3.2.3 章节写作工具
+- 章节生成和重写功能
+- 支持直接编辑章节内容
+- 语音合成朗读功能
+- 章节下载功能
+
+#### 3.2.4 辅助创作工具
+- **魔鬼编辑**：模拟专业编辑审阅，提供润色和重构建议
+- **读者反馈模拟**：支持输入修改意见并重写章节
+- **题材公式推荐**：根据章节内容推荐合适的题材公式
+- **人性化改写**：将生硬的文本改写为更自然、流畅的中文表达
+
+#### 3.2.5 状态管理
+- 角色状态档案：跟踪角色的物品、能力、状态和关系
+- 状态历史记录：保存不同章节的状态快照，支持回溯查看
+- 上下文同步：根据章节内容自动更新全局摘要和角色状态
+
+#### 3.2.6 响应式设计和移动端适配
+- 优化的移动端布局，适配各种屏幕尺寸
+- 移动端侧边栏，支持展开/折叠切换
+- 响应式字体大小和间距，提高移动端可读性
+- 触摸友好的交互设计，适配移动设备操作习惯
+- 环境变量控制的功能显示，支持构建不同版本
+
+## 4. 核心数据结构
+
+### 4.1 类型定义
 
 ```typescript
-const STEPS: StepDefinition[] = [
-    { id: 'init', title: '创作初始化', icon: BookOpen },
-    { id: 'dna', title: '核心 DNA', icon: Activity, promptKey: 'DNA' },
-    { id: 'characters', title: '角色动力学', icon: Users, promptKey: 'CHARACTERS' },
-    { id: 'world', title: '世界观构建', icon: Globe, promptKey: 'WORLD' },
-    { id: 'plot', title: '情节架构', icon: GitMerge, promptKey: 'PLOT' },
-    { id: 'blueprint', title: '章节蓝图', icon: List, promptKey: 'BLUEPRINT' },
-    { id: 'state', title: '角色状态库', icon: Activity, promptKey: 'STATE_INIT' },
-    { id: 'writing', title: '正文创作', icon: PenTool, promptKey: 'CHAPTER_1' }
-];
-```
-
-### 3.3 核心DNA生成逻辑
-
-```mermaid
-flowchart TD
-    A[用户点击"生成核心架构"] --> B[调用handleGenerateStep函数]
-    B --> C[构建提示词变量]
-    C --> D[调用formatPrompt函数格式化提示词]
-    D --> E[调用generateContent函数调用AI API]
-    E --> F[处理AI生成结果]
-    F --> G[更新generatedData.dna状态]
-    G --> H[重新渲染页面，展示生成结果]
-```
-
-### 3.4 判官审题功能逻辑
-
-```mermaid
-flowchart TD
-    A[用户点击"判官审题"] --> B[调用handleJudge函数]
-    B --> C[构建用户提示词]
-    C --> D[调用generateContent函数生成评审结果]
-    D --> E[更新judgeResult状态]
-    E --> F[显示JudgeResultModal模态框]
-    F --> G[用户选择优化方案]
-    G --> H[调用handleSelectJudgeProposal函数]
-    H --> I[提取选中方案]
-    I --> J[构建DNA生成提示词]
-    J --> K[调用generateContent函数生成新DNA]
-    K --> L[更新generatedData.dna状态]
-    L --> M[关闭模态框，重新渲染页面]
-```
-
-### 3.5 重写/修改功能逻辑
-
-```mermaid
-flowchart TD
-    A[用户点击"重写/修改"] --> B[调用openCustomModal函数]
-    B --> C[显示CustomRequestModal模态框]
-    C --> D[用户输入自定义修改要求]
-    D --> E[调用handleGenerateStep函数]
-    E --> F[构建包含自定义要求的提示词]
-    F --> G[调用AI API生成新结果]
-    G --> H[更新generatedData状态]
-    H --> I[关闭模态框，重新渲染页面]
-```
-
-## 4. 数据结构
-
-### 4.1 核心类型定义
-
-#### 4.1.1 UserInputs - 用户输入数据
-```typescript
-export interface UserInputs {
-  topic: string;           // 核心脑洞
-  genre: string;           // 题材分类
-  tone: string;            // 故事基调
-  ending: string;          // 结局倾向
-  perspective: string;     // 叙事视角
-  numberOfChapters: number; // 预计章节数
-  wordCount: number;       // 每章字数
-  customRequirements: string; // 自定义特殊要求
-  novelTitle: string;      // 小说名称
-}
-```
-
-#### 4.1.2 GeneratedData - 生成的数据
-```typescript
-export interface GeneratedData {
-  dna: string | null;               // 核心DNA
-  globalSummary: string | null;      // 全局故事摘要
-  characters: string | null;         // 角色动力学
-  world: string | null;             // 世界观构建
-  plot: string | null;              // 情节架构
-  blueprint: string | null;         // 章节蓝图
-  state: string | null;             // 角色状态库
-  chapters: Chapter[];             // 章节列表
-  stateHistory?: StateArchive[];    // 状态历史
-}
-```
-
-#### 4.1.3 Chapter - 章节数据
-```typescript
-export interface Chapter {
-  title: string;           // 章节标题
-  content: string;         // 章节内容
-  summary?: string;        // 章节摘要
-  role?: string;           // 章节定位
-  purpose?: string;        // 核心作用
-  suspense?: string;       // 悬念密度
-  twist?: string;          // 认知颠覆
-}
-```
-
-#### 4.1.4 ApiConfig - API配置
-```typescript
+// API配置
 export interface ApiConfig {
-  provider: 'google' | 'openai' | 'claude' | 'deepseek' | 'custom'; // AI提供商
-  baseUrl: string;        // API基础URL
-  apiKey: string;         // API密钥
-  textModel: string;      // 文本生成模型
-  customTextModel?: string; // 自定义模型
+  provider: 'google' | 'openai' | 'claude' | 'deepseek' | 'custom';
+  baseUrl: string;
+  apiKey: string;
+  textModel: string;
+  customTextModel?: string;
 }
-```
 
-#### 4.1.5 StepDefinition - 步骤定义
-```typescript
-export interface StepDefinition {
-  id: keyof GeneratedData | 'init' | 'writing'; // 步骤ID
-  title: string;           // 步骤标题
-  icon: any;               // 步骤图标
-  promptKey?: string;       // 对应的提示词模板键
+// 章节信息
+export interface Chapter {
+  title: string;
+  content: string;
+  summary?: string;
+  role?: string;
+  purpose?: string;
+  suspense?: string;
+  twist?: string;
 }
-```
 
-#### 4.1.6 StateArchive - 状态档案
-```typescript
+// 状态存档
 export interface StateArchive {
-  chapterNum: number;      // 章节号
-  title: string;           // 存档标题
-  globalSummary: string;    // 全局摘要
-  characterState: string;   // 角色状态
-  chapterSummary: string;   // 章节摘要
-  timestamp: number;        // 存档时间戳
+  chapterNum: number;
+  title: string;
+  globalSummary: string;
+  characterState: string;
+  chapterSummary: string;
+  timestamp: number;
+}
+
+// 生成数据
+export interface GeneratedData {
+  dna: string | null;
+  globalSummary: string | null;
+  characters: string | null;
+  world: string | null;
+  plot: string | null;
+  blueprint: string | null;
+  state: string | null;
+  chapters: Chapter[];
+  stateHistory?: StateArchive[];
+}
+
+// 用户输入
+export interface UserInputs {
+  topic: string;
+  genre: string;
+  tone: string;
+  ending: string;
+  perspective: string;
+  numberOfChapters: number;
+  wordCount: number;
+  customRequirements: string;
+  novelTitle: string;
 }
 ```
 
-## 5. 状态管理
+### 4.2 常量定义
 
-### 5.1 核心状态变量
+- **提示词模板**：定义了各种AI生成任务的提示词模板
+- **题材库**：包含多种题材公式，用于推荐和创作
+- **情节结构**：提供29种情节结构模板
+- **故事基调**：定义了6种故事基调
+- **结局类型**：定义了10种结局类型
+- **叙事视角**：定义了5种叙事视角
 
-| 状态变量 | 类型 | 初始值 | 功能描述 |
-|----------|------|--------|----------|
-| currentStep | number | 0 | 当前步骤索引 |
-| inputs | UserInputs | 空对象 | 用户输入的基础创作信息 |
-| apiConfig | ApiConfig | 默认配置 | API配置信息 |
-| generatedData | GeneratedData | 初始值 | AI生成的数据 |
-| customPrompts | Record<string, string> | {} | 用户自定义的提示词模板 |
-| isGenerating | boolean | false | 是否正在生成内容 |
-| isJudging | boolean | false | 是否正在进行判官审题 |
-| isSyncingContext | boolean | false | 是否正在同步上下文 |
-| loadingMessage | string | "" | 加载提示信息 |
-| judgeResult | string | "" | 判官审题的结果 |
-| showJudgeModal | boolean | false | 是否显示判官结果模态框 |
-| isSidebarOpen | boolean | false | 控制移动端侧边栏显示/隐藏 |
-| writingStepState | object | { viewChapter: 1, selectedTheme: null } | 正文创作步骤状态 |
-| isInitCompleted | boolean | false | 创作初始化是否完成 |
-| stepCustomInstructions | Record<string, string> | {} | 各步骤的自定义修改要求 |
+## 5. 核心API与函数
 
-### 5.2 状态更新逻辑
+### 5.1 `generateContent`
 
-1. **用户输入更新**：通过`setInputs`函数更新用户输入数据
-2. **生成数据更新**：通过`setGeneratedData`函数更新AI生成的数据
-3. **步骤切换**：通过`setCurrentStep`函数切换创作步骤
-4. **加载状态更新**：通过`setIsGenerating`等函数更新加载状态
-5. **模态框状态更新**：通过`setShowJudgeModal`等函数控制模态框显示/隐藏
+**功能**：调用AI API生成内容
 
-## 6. 常量定义
-
-### 6.1 核心常量
-
-#### 6.1.1 PROMPTS - 提示词模板
-```typescript
-export const PROMPTS = {
-  JUDGE: `# 网文选题·生死判官...`,
-  DNA: `# 小说核心DNA生成专家...`,
-  CHARACTERS: `# 角色动力学架构专家...`,
-  WORLD: `# 三维世界构建专家...`,
-  PLOT: `# 情节架构师...`,
-  BLUEPRINT: `# 章节悬念节奏设计师...`,
-  STATE_INIT: `# 角色状态管理专家...`,
-  STATE_UPDATE: `# 小说上下文同步与状态更新专家...`,
-  CHAPTER_1: `# 首章内容创作专家...`,
-  CHAPTER_NEXT: `# 后续章节创作专家...`,
-  HUMANIZE_REWRITE: `# 人性化改写专家...`
-};
-```
-
-#### 6.1.2 其他常量
-
-| 常量 | 类型 | 功能描述 |
-|------|------|----------|
-| TAGS | 对象 | 题材标签，分为男频和女频 |
-| STORY_TONES | 数组 | 故事基调选项 |
-| ENDING_TYPES | 数组 | 结局倾向选项 |
-| NARRATIVE_PERSPECTIVES | 数组 | 叙事视角选项 |
-| PLOT_STRUCTURES | 数组 | 情节结构选项 |
-
-## 7. API服务
-
-### 7.1 apiService.ts 核心函数
-
-#### 7.1.1 generateContent - AI内容生成
-```typescript
-export const generateContent = async (
-  systemPrompt: string,
-  userPrompt: string,
-  config: ApiConfig
-): Promise<string> => {
-  // 根据不同的AI提供商调用不同的API
-  // 处理API响应，返回生成的内容
-};
-```
-
-**参数说明**：
+**参数**：
 - `systemPrompt`：系统提示词，定义AI的角色和任务
-- `userPrompt`：用户提示词，提供具体的创作要求
-- `config`：API配置信息
+- `userPrompt`：用户输入，提供具体的生成需求
+- `config`：API配置，包含基础URL、密钥和模型
+- `wordCount`：期望生成的字数，用于动态调整生成参数
 
-**返回值**：AI生成的内容字符串
+**返回值**：生成的文本内容
 
-#### 7.1.2 formatPrompt - 提示词格式化
-```typescript
-export const formatPrompt = (template: string, variables: Record<string, any>): string => {
-  // 将模板中的变量替换为实际值
-  // 返回格式化后的提示词
-};
+**实现细节**：
+- 支持多种AI模型提供商
+- 实现了智能重试机制（最多3次）
+- 针对不同模型设置了差异化超时时间
+- 提供了友好的错误信息
+
+### 5.2 `formatPrompt`
+
+**功能**：格式化提示词模板，替换变量
+
+**参数**：
+- `template`：提示词模板，包含占位符
+- `variables`：变量对象，用于替换占位符
+
+**返回值**：格式化后的提示词
+
+### 5.3 `cleanAIResponse`
+
+**功能**：清理AI响应，去除不必要的格式和内容
+
+**参数**：
+- `text`：AI生成的原始文本
+
+**返回值**：清理后的文本
+
+### 5.4 `testConnection`
+
+**功能**：测试API连接是否正常
+
+**参数**：
+- `config`：API配置，包含基础URL、密钥和模型
+
+**返回值**：包含连接结果和消息的对象
+
+### 5.5 `generateSpeech`
+
+**功能**：将文本转换为语音
+
+**参数**：
+- `text`：要转换为语音的文本
+- `config`：API配置
+
+**返回值**：Base64编码的音频数据
+
+### 5.6 `pcmToWav`
+
+**功能**：将PCM音频数据转换为WAV格式
+
+**参数**：
+- `base64PCM`：Base64编码的PCM音频数据
+
+**返回值**：WAV格式的Blob对象
+
+## 6. 技术实现细节
+
+### 6.1 AI模型集成
+
+平台支持多种AI模型提供商，通过统一的接口进行调用：
+
+1. **Google Gemini**：使用Google的生成式AI模型
+2. **OpenAI**：支持OpenAI的GPT系列模型
+3. **Claude**：支持Anthropic的Claude模型
+4. **DeepSeek**：支持DeepSeek的模型
+5. **自定义模型**：支持自定义的OpenAI兼容接口
+
+### 6.2 提示词管理
+
+平台实现了灵活的提示词管理系统：
+
+- 预设了多种提示词模板
+- 支持查看和编辑提示词
+- 支持自定义提示词模板
+- 支持提示词历史记录
+- 可以通过环境变量控制是否显示提示词管理功能
+
+### 6.3 状态同步机制
+
+平台实现了智能的状态同步机制：
+
+- 每章完成后自动分析内容
+- 更新全局故事摘要
+- 更新角色状态档案
+- 归档到角色状态库
+- 支持回溯查看历史状态
+
+### 6.4 项目管理功能
+
+平台支持项目的导入和导出：
+
+- 导出项目为JSON文件
+- 从JSON文件导入项目
+- 支持跨设备数据迁移和备份
+- 自动保存配置和自定义提示词
+
+## 7. 组件结构
+
+| 组件名称 | 功能 |
+|----------|------|
+| `CustomAlert` | 自定义提示组件 |
+| `MarkdownViewer` | Markdown渲染组件 |
+| `Modals` | 各种模态框组件（提示词编辑器、配置模态框等） |
+| `StepCard` | 步骤卡片组件，用于展示创作流程 |
+| `WritingStep` | 写作步骤组件，用于章节创作 |
+
+## 8. 构建与部署
+
+### 8.1 开发环境
+
+1. **安装依赖**
+   ```bash
+   npm install
+   ```
+
+2. **启动开发服务器**
+   ```bash
+   npm run dev
+   ```
+
+3. **访问应用**
+   打开浏览器访问 `http://localhost:5173`
+
+### 8.2 生产构建
+
+```bash
+# 标准构建
+npm run build
+
+# 构建带隐藏提示词管理的版本
+npm run build:hide-prompts
+
+# 预览构建结果
+npm run preview
 ```
 
-**参数说明**：
-- `template`：提示词模板，包含{variable}形式的占位符
-- `variables`：变量对象，键为占位符名称，值为替换内容
-
-**返回值**：格式化后的完整提示词
-
-## 8. 核心功能实现
-
-### 8.1 核心DNA生成
-
-**实现函数**：`handleGenerateStep`
-**功能**：根据当前步骤生成对应的AI内容
-**核心逻辑**：
-1. 获取当前步骤的提示词模板
-2. 构建提示词变量，包含用户输入和已生成的数据
-3. 格式化提示词
-4. 调用AI API生成内容
-5. 更新生成的数据状态
-
-**关键代码**：
-```typescript
-const handleGenerateStep = async (stepId: keyof GeneratedData, customReq: string = "") => {
-  // ...
-  const template = customPrompts[stepDef.promptKey] || PROMPTS[stepDef.promptKey as keyof typeof PROMPTS];
-  const variables = {
-    novel_title: String(inputs.novelTitle || "未命名"),
-    topic: String(inputs.topic || ""),
-    // ... 其他变量
-    STORY_DNA: String(generatedData.dna || "暂无核心DNA"),
-    // ... 其他生成数据
-  };
-  const prompt = formatPrompt(template, variables);
-  const result = await generateContent(prompt, "开始生成任务", apiConfig);
-  setGeneratedData(prev => ({
-    ...prev,
-    [stepId]: result
-  }));
-  // ...
-};
-```
-
-### 8.2 判官审题
-
-**实现函数**：`handleJudge`和`handleSelectJudgeProposal`
-**功能**：生成评审结果并根据选择的方案重写核心DNA
-**核心逻辑**：
-1. 构建包含当前创作信息的用户提示词
-2. 调用AI API生成评审结果
-3. 显示评审结果模态框
-4. 用户选择优化方案
-5. 提取选中方案
-6. 构建新的DNA生成提示词
-7. 调用AI API生成新DNA
-8. 更新核心DNA状态
-
-**关键代码**：
-```typescript
-const handleJudge = async () => {
-  // ...
-  let userPrompt = `题材：${inputs.genre}\n核心脑洞：${inputs.topic}\n`;
-  // ... 添加其他创作信息
-  const result = await generateContent(template, userPrompt, apiConfig);
-  setJudgeResult(result);
-  setShowJudgeModal(true);
-  // ...
-};
-
-const handleSelectJudgeProposal = async (proposalIndex: number) => {
-  // ...
-  const selectedProposal = extractSelectedProposal(judgeResult, proposalIndex);
-  const variables = {
-    // ... 基础创作信息
-    custom_instruction: `严格根据判官评审方案${proposalIndex}重写核心DNA...`,
-    // ... 其他变量
-  };
-  const prompt = formatPrompt(template, variables);
-  const newContent = await generateContent(prompt, "开始生成任务", apiConfig);
-  // ... 处理生成结果
-  setGeneratedData(prev => ({ ...prev, dna: cleanedContent }));
-  // ...
-};
-```
-
-### 8.3 重写/修改功能
-
-**实现函数**：`openCustomModal`和`handleGenerateStep`
-**功能**：允许用户输入自定义修改要求，重新生成内容
-**核心逻辑**：
-1. 打开自定义请求模态框
-2. 用户输入自定义修改要求
-3. 调用`handleGenerateStep`函数，传入自定义修改要求
-4. 构建包含自定义要求的提示词
-5. 调用AI API生成新内容
-6. 更新生成的数据状态
-
-**关键代码**：
-```typescript
-const openCustomModal = (title: string, callback: (val: string) => void) => {
-  // ... 显示模态框
-};
-
-// 重写/修改按钮点击事件
-onClick={() => openCustomModal(STEPS[currentStep].title, (val) => handleGenerateStep(currentStepId, val))}
-```
-
-### 8.4 人性化改写功能
-
-**实现组件**：`WritingStep.tsx`
-**功能**：基于用户提供的范文风格，将生硬的文本改写为更自然、流畅的中文表达
-**核心状态**：
-- `isHumanizeRewriting`: 控制是否正在进行人性化改写
-- `humanizePrompt`: 保存用户输入的范文
-- `showHumanizeInput`: 控制是否显示人性化改写输入框
-
-**核心逻辑**：
-1. 用户点击"人性化改写"按钮
-2. 显示范文输入框
-3. 用户输入范文
-4. 调用`generateContent`函数，使用`HUMANIZE_REWRITE`提示词模板
-5. 处理AI生成的改写结果
-6. 更新章节内容
-
-**关键代码**：
-```typescript
-const handleHumanizeRewrite = async () => {
-  // ...
-  const template = PROMPTS.HUMANIZE_REWRITE;
-  const variables = {
-    humanize_prompt: humanizePrompt,
-    original_content: currentChapter.content
-  };
-  const prompt = formatPrompt(template, variables);
-  const result = await generateContent("", prompt, apiConfig);
-  // ... 更新章节内容
-};
-```
-
-## 9. 响应式设计和移动端适配
-
-### 9.1 移动端侧边栏实现
-
-**功能**：在小屏幕设备上提供可折叠的侧边栏，方便用户导航
-**实现组件**：`App.tsx`
-**核心状态**：
-- `isSidebarOpen`: 控制侧边栏的显示/隐藏
-
-**核心逻辑**：
-1. 检测屏幕尺寸，在小屏幕上显示侧边栏折叠按钮
-2. 点击按钮时切换`isSidebarOpen`状态
-3. 根据`isSidebarOpen`状态控制侧边栏的显示/隐藏和遮罩层
-4. 点击遮罩层时关闭侧边栏
-
-**关键代码**：
-```typescript
-// 控制移动端侧边栏显示/隐藏
-const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-// 侧边栏渲染逻辑
-{
-  isSidebarOpen && (
-    <div className="fixed inset-0 bg-black/50 z-20 lg:hidden" onClick={() => setIsSidebarOpen(false)} />
-  )
-}
-<aside className={`
-  fixed lg:relative top-0 left-0 h-full bg-stone-900 text-white z-30
-  transform transition-transform duration-300 ease-in-out
-  ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-  w-64 lg:w-72
-`}>
-  {/* 侧边栏内容 */}
-</aside>
-```
-
-### 9.2 响应式布局设计
-
-**实现方式**：使用Tailwind CSS的响应式工具类
-**核心策略**：
-1. 针对不同屏幕尺寸使用不同的布局类（sm:, md:, lg:, xl:）
-2. 在小屏幕上使用垂直布局，大屏幕上使用水平布局
-3. 调整字体大小和间距，提高移动端可读性
-4. 优化按钮和交互元素的尺寸，适配触摸操作
-
-**关键实现**：
-- 响应式容器：`container mx-auto px-4 sm:px-6 lg:px-8`
-- 响应式网格：`grid grid-cols-1 lg:grid-cols-3 gap-4`
-- 响应式字体：`text-base sm:text-lg lg:text-xl`
-- 响应式间距：`p-2 sm:p-4 lg:p-6`
-
-## 10. 组件通信
-
-### 10.1 组件层级结构
-
-```
-App
-├── StepCard (多个)
-├── MarkdownViewer
-├── WritingStep
-├── PromptEditorModal
-├── CustomRequestModal
-├── JudgeResultModal
-├── ConfigModal
-├── PromptManagerModal
-└── PlotStructureModal
-```
-
-### 10.2 组件通信方式
-
-1. **Props传递**：父组件通过props向子组件传递数据和回调函数
-2. **状态提升**：将共享状态提升到最近的公共父组件
-3. **Ref引用**：使用useRef保存回调函数，确保同步更新
-4. **事件回调**：通过回调函数实现子组件向父组件通信
-
-## 11. 核心API调用
-
-### 11.1 AI API调用流程
-
-```mermaid
-flowchart TD
-    A[构建提示词] --> B[调用generateContent函数]
-    B --> C[根据provider选择API端点]
-    C --> D[构建API请求参数]
-    D --> E[发送HTTP请求]
-    E --> F[处理API响应]
-    F --> G[清理和格式化生成结果]
-    G --> H[返回生成内容]
-```
-
-### 10.2 API请求参数
-
-| 参数 | 类型 | 功能描述 |
-|------|------|----------|
-| system | string | 系统提示词 |
-| messages | array | 消息数组，包含用户和AI的对话历史 |
-| temperature | number | 生成内容的随机性，范围0-1 |
-| max_tokens | number | 生成内容的最大长度 |
-| model | string | 使用的AI模型名称 |
-
-## 12. 性能优化
-
-### 12.1 优化措施
-
-1. **异步加载**：AI生成过程使用异步函数，不阻塞主线程
-2. **状态管理优化**：合理使用React状态，避免不必要的重渲染
-3. **组件拆分**：将复杂组件拆分为简单组件，提高复用性和性能
-4. **代码分割**：使用Vite的代码分割功能，减小初始加载体积
-5. **缓存机制**：缓存API调用结果，避免重复调用
-
-### 11.2 加载状态管理
-
-通过`isGenerating`、`isJudging`、`isSyncingContext`等状态变量管理加载状态，显示相应的加载提示，提升用户体验。
-
-## 13. 开发和构建
-
-### 13.1 开发命令
-
-| 命令 | 功能 |
-|------|------|
-| `npm install` | 安装依赖 |
-| `npm run dev` | 启动开发服务器 |
-| `npm run build` | 构建生产版本 |
-| `npm run preview` | 预览生产版本 |
-
-### 12.2 构建流程
-
-1. 清理旧的构建文件
-2. 转换TypeScript代码为JavaScript
-3. 打包和压缩代码
-4. 生成dist目录，包含可部署的静态文件
-5. 生成index.html文件，引入打包后的JavaScript文件
-
-## 14. 核心功能的输入输出示例
-
-### 14.1 核心DNA生成
-
-**输入**：
-```
-{ 
-  topic: "修仙世界卖保险",
-  genre: "都市修真",
-  tone: "爆笑",
-  // ... 其他输入
-}
-```
-
-**输出**：
-```markdown
-## 基础设定 (BASIC_SETTINGS)
-- 小说名称：修仙保险推销员
-- 核心脑洞：修仙世界卖保险
-- 题材分类：都市修真
-- 叙事视角：第三人称限制
-- 故事基调：爆笑
-- 结局倾向：圆满
-- 预计章节数：12章
-- 每章字数：2000字
-- 自定义特殊要求：主角必须靠理赔来提升修为
-
-## 核心DNA (STORY_DNA)
-当一个普通的保险推销员穿越到修仙世界，发现自己只能通过卖保险和处理理赔来提升修为时，他必须在这个充满危险和机遇的世界中，利用自己的保险知识和商业头脑，建立起修仙界的保险帝国，同时应对各种奇葩的理赔请求和来自修真者的挑战；否则，他将永远无法提升修为，甚至可能在这个危险的世界中丧命；与此同时，一个隐藏在修仙界背后的巨大阴谋正在慢慢浮出水面，与保险行业有着千丝万缕的联系。
-```
-
-### 13.2 判官审题
-
-**输入**：
-```
-{ 
-  topic: "修仙世界卖保险",
-  genre: "都市修真",
-  // ... 其他输入
-  dna: "## 核心DNA (STORY_DNA) 当一个普通的保险推销员..."
-}
-```
-
-**输出**：
-```markdown
-【市场定级】：S+ 原创性评分：9分
-【套路粉碎机】：...
-【原创S级魔改】
-【方案1：逻辑反转】
-1. **创新手法**：将"主角卖保险给修真者"反转成"修真者求主角卖保险给他"
-2. **核心DNA重写建议**：当一个拥有"因果律保险"能力的推销员...
-```
-
-## 15. 学习指南
-
-### 15.1 代码学习路径
-
-1. **先学基础文件**：
-   - `types.ts`：了解数据结构
-   - `constants.ts`：了解提示词设计
-   - `services/apiService.ts`：了解AI API调用
-
-2. **再学核心组件**：
-   - `App.tsx`：了解应用的整体结构和核心逻辑
-   - `components/Modals.tsx`：了解模态框的实现
-   - `components/MarkdownViewer.tsx`：了解Markdown渲染
-
-3. **最后学功能实现**：
-   - 核心DNA生成：`handleGenerateStep`函数
-   - 判官审题：`handleJudge`和`handleSelectJudgeProposal`函数
-   - 重写/修改：`openCustomModal`函数
-
-### 14.2 常见问题解答
-
-1. **如何修改AI模型？**
-   - 在应用中点击右下角的设置图标
-   - 修改API配置中的provider和model
-   - 保存配置
-
-2. **如何自定义提示词？**
-   - 在每个步骤页面点击编辑提示词图标
-   - 修改提示词模板
-   - 保存修改
-
-3. **如何扩展新功能？**
-   - 在`STEPS`数组中添加新的步骤定义
-   - 在`PROMPTS`中添加对应的提示词模板
-   - 实现新的生成逻辑
-
-## 16. 总结
-
-本项目是一个功能完整、架构清晰的AI小说创作助手，通过React + TypeScript实现了从灵感初始化到正文创作的全流程AI辅助。项目采用模块化设计，便于扩展和维护。
-
-核心亮点：
-1. 支持完整的小说创作流程
-2. 灵活的提示词模板系统
-3. 支持多种AI模型
-4. 友好的用户界面和交互体验
-5. 清晰的代码结构和详细的文档
-
-通过学习本项目，你可以了解AI编程的核心概念，包括提示词设计、API调用、状态管理等。同时，你也可以学习React + TypeScript的开发流程和最佳实践。
-
-祝你学习愉快，早日成为AI编程高手！
+## 9. 性能优化
+
+### 9.1 前端性能优化
+
+- 使用React 19的新特性，提高渲染性能
+- 实现组件的懒加载和代码分割
+- 优化长文本的渲染性能
+- 减少不必要的重渲染
+
+### 9.2 API调用优化
+
+- 实现了智能重试机制，提高API调用成功率
+- 针对不同模型设置了差异化超时时间
+- 动态调整生成参数，优化生成质量和速度
+- 实现了请求取消功能，防止用户频繁操作导致的无效请求
+
+### 9.3 资源加载优化
+
+- 实现图标和资源的按需加载
+- 优化依赖项，减少打包体积
+- 支持单文件构建，方便部署和使用
+
+## 10. 安全性考虑
+
+- API密钥存储在本地，不会上传到服务器
+- 实现了API密钥的安全检查和验证
+- 支持HTTPS连接，确保数据传输安全
+- 实现了输入验证，防止恶意输入
+
+## 11. 扩展性设计
+
+- 模块化的代码结构，便于添加新功能
+- 支持多种AI模型提供商，便于扩展
+- 灵活的提示词管理系统，便于自定义
+- 支持插件扩展，便于添加新的创作工具
+
+## 12. 测试与调试
+
+### 12.1 测试策略
+
+- 单元测试：针对核心函数进行测试
+- 集成测试：测试组件间的交互
+- E2E测试：测试完整的用户流程
+
+### 12.2 调试工具
+
+- 集成了React DevTools，便于调试组件
+- 实现了详细的日志记录，便于调试API调用
+- 支持环境变量控制调试信息的输出
+
+## 13. 未来优化方向
+
+### 13.1 技术架构优化
+
+1. **引入状态管理库**：考虑引入Zustand或Redux Toolkit等轻量级状态管理库，提高代码可维护性
+2. **实现API调用优化**：添加请求缓存机制，避免重复调用相同的提示词
+3. **优化数据持久化**：添加自动保存功能，定期保存创作进度
+4. **实现云端同步功能**：支持多设备访问
+
+### 13.2 功能增强
+
+1. **增强编辑功能**：添加语法检查和风格统一功能
+2. **实现版本控制**：支持查看和恢复历史版本
+3. **添加协作功能**：支持多人共同编辑
+4. **扩展AI功能**：添加自动摘要生成功能、情节一致性检查、角色行为分析等
+
+### 13.3 性能优化
+
+1. **优化渲染性能**：实现虚拟滚动，优化长文本的渲染性能
+2. **优化API响应处理**：实现流式响应处理，提高用户体验
+3. **优化资源加载**：实现资源的预加载和懒加载
+
+## 14. 总结
+
+猫叔智能小说创作助手是一个功能完整、设计精良的智能小说创作平台，为作者提供了从创意构思到章节写作的全流程支持。平台采用了现代化的技术栈，具有良好的扩展性和可维护性。通过不断优化和增强功能，可以进一步提高平台的易用性和创作效率，为作者提供更好的创作体验。
+
+该项目的核心优势在于：
+- 完整的创作工作流，覆盖小说创作的各个阶段
+- 强大的AI生成能力，支持多种内容生成和修改
+- 丰富的可视化展示，提高内容的可读性和理解性
+- 灵活的配置选项，支持自定义提示词和模板
+- 良好的用户体验设计，操作简单直观
+
+通过持续的优化和功能增强，猫叔智能小说创作助手有望成为作者创作小说的得力助手，
