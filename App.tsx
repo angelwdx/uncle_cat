@@ -8,13 +8,13 @@ import {
 import {
     ApiConfig, Chapter, GeneratedData, UserInputs, StepDefinition, StateArchive
 } from './types';
-import { PROMPTS, TAGS, STORY_TONES, ENDING_TYPES, NARRATIVE_PERSPECTIVES, THEME_MATCH_PROMPT, PLOT_STRUCTURES } from './constants';
+import { PROMPTS, TAGS, STORY_TONES, ENDING_TYPES, NARRATIVE_PERSPECTIVES, THEME_MATCH_PROMPT, PLOT_STRUCTURES, THEME_LIBRARY_CONTENT } from './constants';
 import { generateContent, formatPrompt } from './services/apiService';
 import StepCard from './components/StepCard';
 import MarkdownViewer from './components/MarkdownViewer';
 import WritingStep from './components/WritingStep';
 import {
-    PromptEditorModal, CustomRequestModal, JudgeResultModal, ConfigModal, PromptManagerModal, PlotStructureModal
+    CustomRequestModal, JudgeResultModal, ConfigModal, PromptManagerModal, PlotStructureModal, PlotCritiqueModal
 } from './components/Modals';
 import { useAlert } from './components/CustomAlert';
 
@@ -75,10 +75,7 @@ export default function App() {
     const [showConfigModal, setShowConfigModal] = useState(false);
     const [showPromptManager, setShowPromptManager] = useState(false);
 
-    const [showPromptModal, setShowPromptModal] = useState(false);
-    const [editingPromptKey, setEditingPromptKey] = useState<string | null>(null);
-    const [fullPrompt, setFullPrompt] = useState<string>("");
-    const [isFullPromptView, setIsFullPromptView] = useState<boolean>(false);
+
 
     // 存储各步骤的自定义修改要求
     const [stepCustomInstructions, setStepCustomInstructions] = useState<Record<string, string>>({});
@@ -96,6 +93,10 @@ export default function App() {
 
     const [judgeResult, setJudgeResult] = useState("");
     const [showJudgeModal, setShowJudgeModal] = useState(false);
+
+    const [isPlotCritiquing, setIsPlotCritiquing] = useState(false);
+    const [plotCritiqueResult, setPlotCritiqueResult] = useState("");
+    const [showPlotCritiqueModal, setShowPlotCritiqueModal] = useState(false);
 
     const [viewArchiveChapter, setViewArchiveChapter] = useState<number>(0);
     const [isInitCompleted, setIsInitCompleted] = useState<boolean>(false);
@@ -210,6 +211,16 @@ export default function App() {
             });
             setCurrentStep(0);
 
+            // Clear local storage
+            localStorage.removeItem('storymind_inputs');
+            localStorage.removeItem('storymind_data');
+            localStorage.removeItem('storymind_step');
+            localStorage.removeItem('storymind_instructions');
+            localStorage.removeItem('storymind_prompts');
+            localStorage.removeItem('storymind_init_completed');
+            localStorage.removeItem('storymind_writing_state');
+            // Do NOT clear config
+
             // 提示重置成功
             showAlert('项目已成功重置！', 'success');
         } catch (error) {
@@ -222,29 +233,70 @@ export default function App() {
     const [showPlotStructureModal, setShowPlotStructureModal] = useState(false);
     const [selectedPlotStructure, setSelectedPlotStructure] = useState<string>(PLOT_STRUCTURES[0]?.name || "三幕式结构（Three-Act Structure）");
 
+    // Flag to track if data has been loaded from local storage
+    const [isLoaded, setIsLoaded] = useState(false);
+
+    // Load data from localStorage on mount
     useEffect(() => {
-        // 添加try-catch块，确保localStorage无法访问时应用仍能正常运行
         try {
+            const savedInputs = localStorage.getItem('storymind_inputs');
+            const savedData = localStorage.getItem('storymind_data');
+            const savedStep = localStorage.getItem('storymind_step');
+            const savedInstructions = localStorage.getItem('storymind_instructions');
+            const savedPrompts = localStorage.getItem('storymind_prompts');
+            const savedInit = localStorage.getItem('storymind_init_completed');
+            const savedWritingState = localStorage.getItem('storymind_writing_state');
+
+            if (savedInputs) setInputs(JSON.parse(savedInputs));
+            if (savedData) setGeneratedData(JSON.parse(savedData));
+            if (savedStep) setCurrentStep(parseInt(savedStep));
+            if (savedInstructions) setStepCustomInstructions(JSON.parse(savedInstructions));
+            if (savedPrompts) setCustomPrompts(JSON.parse(savedPrompts));
+            if (savedInit) setIsInitCompleted(JSON.parse(savedInit));
+            if (savedWritingState) setWritingStepState(JSON.parse(savedWritingState));
+
+            // Load config
             const savedConfig = localStorage.getItem('deepstory_config');
             if (savedConfig) {
-                try {
-                    const parsedConfig = JSON.parse(savedConfig);
-                    // 确保有provider字段，兼容旧版本配置
-                    setApiConfig({
-                        provider: parsedConfig.provider || 'google',
-                        ...parsedConfig
-                    });
-                } catch (e) {
-                    console.error("Config load error", e);
-                }
+                const parsedConfig = JSON.parse(savedConfig);
+                setApiConfig(prev => ({ ...prev, ...parsedConfig }));
             }
         } catch (e) {
-            // 处理localStorage无法访问的情况（如隐私模式）
-            console.error("localStorage access error", e);
+            console.error("Failed to load local storage data:", e);
+        } finally {
+            setIsLoaded(true);
         }
     }, []);
 
-    // 保存配置时添加try-catch块，确保localStorage无法访问时应用仍能正常运行
+    // Auto-save effects - Only save if loaded
+    useEffect(() => {
+        if (isLoaded) localStorage.setItem('storymind_inputs', JSON.stringify(inputs));
+    }, [inputs, isLoaded]);
+
+    useEffect(() => {
+        if (isLoaded) localStorage.setItem('storymind_data', JSON.stringify(generatedData));
+    }, [generatedData, isLoaded]);
+
+    useEffect(() => {
+        if (isLoaded) localStorage.setItem('storymind_step', currentStep.toString());
+    }, [currentStep, isLoaded]);
+
+    useEffect(() => {
+        if (isLoaded) localStorage.setItem('storymind_instructions', JSON.stringify(stepCustomInstructions));
+    }, [stepCustomInstructions, isLoaded]);
+
+    useEffect(() => {
+        if (isLoaded) localStorage.setItem('storymind_prompts', JSON.stringify(customPrompts));
+    }, [customPrompts, isLoaded]);
+
+    useEffect(() => {
+        if (isLoaded) localStorage.setItem('storymind_init_completed', JSON.stringify(isInitCompleted));
+    }, [isInitCompleted, isLoaded]);
+
+    useEffect(() => {
+        if (isLoaded) localStorage.setItem('storymind_writing_state', JSON.stringify(writingStepState));
+    }, [writingStepState, isLoaded]);
+
     const handleConfigSave = (config: ApiConfig) => {
         setApiConfig(config);
         try {
@@ -436,6 +488,10 @@ export default function App() {
             if (generatedData.dna) {
                 userPrompt += `\n当前核心DNA：\n${generatedData.dna}`;
             }
+
+            // 注入独家题材公式库
+            userPrompt += `\n\n【重要资源：独家题材公式库 (THEME_LIBRARY)】\n请务必参考以下公式库进行S级方案设计：\n${THEME_LIBRARY_CONTENT}\n`;
+
             const template = customPrompts['JUDGE'] || PROMPTS.JUDGE;
             const result = await generateContent(template, userPrompt, apiConfig);
             setJudgeResult(result);
@@ -444,6 +500,32 @@ export default function App() {
             showAlert("判官请假了：" + e.message, "error");
         } finally {
             setIsJudging(false);
+        }
+    };
+
+    const handlePlotCritique = async () => {
+        if (!generatedData.dna) {
+            showAlert("请先生成核心DNA后再进行问诊", "warning");
+            return;
+        }
+        setLoadingMessage("正在进行剧情深度诊疗...");
+        setIsPlotCritiquing(true);
+        try {
+            // 构建问诊需要的上下文
+            let userPrompt = `【当前情节架构】\n${generatedData.plot || "尚未生成"}\n\n`;
+            userPrompt += `【核心DNA参考】\n${generatedData.dna || "尚未生成"}\n\n`;
+            userPrompt += `题材：${inputs.genre}\n核心脑洞：${inputs.topic}\n`;
+            userPrompt += `故事基调：${inputs.tone || "未指定"}\n`;
+            userPrompt += `当前选用的剧情结构：${selectedPlotStructure}\n`;
+
+            const template = customPrompts['PLOT_CRITIQUE'] || PROMPTS.PLOT_CRITIQUE;
+            const result = await generateContent(template, userPrompt, apiConfig);
+            setPlotCritiqueResult(result);
+            setShowPlotCritiqueModal(true);
+        } catch (e: any) {
+            showAlert("诊疗失败：" + e.message, "error");
+        } finally {
+            setIsPlotCritiquing(false);
         }
     };
 
@@ -1057,122 +1139,90 @@ export default function App() {
         }
     };
 
+    // 打开自定义要求模态框
     const openCustomModal = (title: string, callback: (val: string) => void) => {
         setCustomModalTitle(title);
-        // 使用ref保存回调函数和标题，确保同步更新
         customPromptCallbackRef.current = callback;
         currentModalTitleRef.current = title;
         setShowCustomRequestModal(true);
     };
 
-    // 生成完整提示词的函数
-    const generateFullPrompt = (promptKey: string, chapterNum?: number) => {
-        if (!promptKey) return;
-
-        // 生成完整提示词
-        const template = customPrompts[promptKey] || PROMPTS[promptKey as keyof typeof PROMPTS] || "";
-
+    // 获取提示词变量的辅助函数
+    const getPromptVariables = (promptKey: string, chapterNum?: number) => {
         let variables: any = {};
 
-        // 根据不同的promptKey设置不同的变量
         if (promptKey === 'CHAPTER_1' || promptKey === 'CHAPTER_NEXT') {
-            // 章节生成相关提示词
-            // 使用传入的chapterNum或默认当前查看的章节
-            let currentChapterNum = chapterNum || writingStepState.viewChapter || 1;
-
-            // 根据promptKey强制设置正确的章节号
-            if (promptKey === 'CHAPTER_1') {
-                // 首章创作强制使用第1章
-                currentChapterNum = 1;
-            } else if (promptKey === 'CHAPTER_NEXT') {
-                // 后续章节确保章节号大于等于2
-                currentChapterNum = Math.max(currentChapterNum, 2);
-            }
-
+            const currentChapterNum = chapterNum || 1;
             const isFirstChapter = currentChapterNum === 1;
+
             let previousContent = "";
             if (!isFirstChapter) {
                 const prevChap = generatedData.chapters[currentChapterNum - 2];
                 previousContent = prevChap ? prevChap.content.slice(-800) : "无前文";
             }
 
-            // 从章节蓝图中获取当前章节的详细信息
-            let chapterRole = "推进剧情";
+            // 尝试查找蓝图信息
+            let nextChapterPurpose = "承接剧情";
             let chapterPurpose = "承上启下";
+            let chapterRole = "推进剧情";
             let suspenseLevel = "正常";
             let foreshadowing = "无";
             let plotTwistLevel = "低";
             let chapterTitle = "暂无标题";
             let shortSummary = "暂无摘要";
-            let nextChapterPurpose = "承接剧情";
 
-            // 解析章节蓝图获取当前章节和下章信息
             if (generatedData.blueprint) {
                 const blueprintLines = generatedData.blueprint.split('\n');
-                const currentChapterRegex = new RegExp(`### 第${currentChapterNum}章 -`);
+                // 查找当前章节
+                const currentChapterRegex = new RegExp(`### 第${currentChapterNum}章 - (.*)`);
+                // 查找下一章
                 const nextChapterRegex = new RegExp(`### 第${currentChapterNum + 1}章 -`);
 
                 let inCurrentChapter = false;
                 let inNextChapter = false;
+
                 for (const line of blueprintLines) {
-                    if (currentChapterRegex.test(line)) {
+                    const currentMatch = line.match(currentChapterRegex);
+                    if (currentMatch) {
                         inCurrentChapter = true;
-                        inNextChapter = false;
-                        // 提取章节标题
-                        const titleMatch = line.match(/- (.+)$/);
-                        if (titleMatch) {
-                            chapterTitle = titleMatch[1];
-                        }
+                        chapterTitle = currentMatch[1].trim();
                     } else if (nextChapterRegex.test(line)) {
                         inCurrentChapter = false;
                         inNextChapter = true;
                     } else if (inCurrentChapter) {
-                        if (line.includes('**本章定位：**')) {
-                            chapterRole = line.replace('**本章定位：**', '').trim();
-                        } else if (line.includes('**核心作用：**')) {
-                            chapterPurpose = line.replace('**核心作用：**', '').trim();
-                        } else if (line.includes('**悬念密度：**')) {
-                            suspenseLevel = line.replace('**悬念密度：**', '').trim();
-                        } else if (line.includes('**伏笔操作：**')) {
-                            foreshadowing = line.replace('**伏笔操作：**', '').trim();
-                        } else if (line.includes('**认知颠覆：**')) {
-                            const twistMatch = line.match(/★+/);
-                            if (twistMatch) {
-                                const twistStars = twistMatch[0].length;
-                                if (twistStars >= 4) plotTwistLevel = "高";
-                                else if (twistStars >= 2) plotTwistLevel = "中";
-                                else plotTwistLevel = "低";
-                            }
-                        } else if (line.includes('**本章简述：**')) {
-                            shortSummary = line.replace('**本章简述：**', '').trim();
-                        }
+                        if (line.includes('**核心作用：**')) chapterRole = line.replace('**核心作用：**', '').trim();
+                        if (line.includes('**剧情安排：**')) chapterPurpose = line.replace('**剧情安排：**', '').trim();
+                        if (line.includes('**悬念设置：**')) suspenseLevel = line.replace('**悬念设置：**', '').trim();
+                        if (line.includes('**伏笔埋藏：**')) foreshadowing = line.replace('**伏笔埋藏：**', '').trim();
+                        if (line.includes('**反转指数：**')) plotTwistLevel = line.replace('**反转指数：**', '').trim();
+                        if (line.includes('**本章摘要：**')) shortSummary = line.replace('**本章摘要：**', '').trim();
                     } else if (inNextChapter) {
-                        // 提取下一章的核心作用
                         if (line.includes('**核心作用：**')) {
                             nextChapterPurpose = line.replace('**核心作用：**', '').trim();
-                            break; // 找到下一章作用后退出循环
+                            break; // 找到下一章信息后停止
                         }
                     }
                 }
             }
 
-            // 查找最合适的状态存档
             const latestArchive = findLatestStateArchive(currentChapterNum);
 
             variables = {
                 novel_number: currentChapterNum,
-                chapter_title: generatedData.chapters[currentChapterNum - 1]?.title || `第${currentChapterNum}章`,
+                chapter_title: chapterTitle,
                 chapter_role: chapterRole,
                 chapter_purpose: chapterPurpose,
                 suspense_level: suspenseLevel,
                 foreshadowing: foreshadowing,
                 plot_twist_level: plotTwistLevel,
                 short_summary: shortSummary,
-                selected_theme_info: writingStepState?.selectedTheme ? `${writingStepState.selectedTheme.name} - ${writingStepState.selectedTheme.desc}` : '未指定特定题材公式，请自行发挥',
+                selected_theme_info: writingStepState.selectedTheme ? `已选题材公式：${writingStepState.selectedTheme.name} - ${writingStepState.selectedTheme.desc}` : '未指定特定题材公式，请自行发挥',
                 character_state: latestArchive.characterState,
                 world_building: generatedData.world || "暂无世界观设定",
                 plot_architecture: generatedData.plot || "暂无情节架构",
                 custom_requirements: inputs.customRequirements || "无",
+                novel_title: String(inputs.novelTitle || "未命名"),
+                tone: String(inputs.tone || "未指定"),
                 perspective: String(inputs.perspective || "未指定"),
                 word_count: String(inputs.wordCount || 2000),
                 CHAPTER_BLUEPRINT: generatedData.blueprint || "暂无章节蓝图",
@@ -1197,10 +1247,9 @@ export default function App() {
                 chapter_title: currentChapter?.title || `第${currentChapterNum}章`
             };
         } else {
+
             // 通用提示词变量
-            // 获取对应的步骤ID
             const step = STEPS.find(s => s.promptKey === promptKey);
-            // 获取该步骤的自定义修改意见
             const customInstruction = step ? stepCustomInstructions[step.id] || "无" : "无";
 
             variables = {
@@ -1221,76 +1270,49 @@ export default function App() {
                 plot_structure: selectedPlotStructure
             };
         }
-
-        const completePrompt = formatPrompt(template, variables);
-        setFullPrompt(completePrompt);
+        return variables;
     };
 
-    const handleShowPrompt = (promptKey: string) => {
-        if (promptKey) {
-            setEditingPromptKey(promptKey);
+    // 获取完整提示词（作为回调传递给PromptManagerModal）
+    // 获取完整提示词（作为回调传递给PromptManagerModal）
+    const handleGetFullPrompt = (promptKey: string, chapterNum?: number) => {
+        let template = "";
+        if (promptKey === 'THEME_MATCH_PROMPT') template = customPrompts[promptKey] || THEME_MATCH_PROMPT;
+        else if (promptKey === 'STATE_UPDATE') template = customPrompts[promptKey] || PROMPTS.STATE_UPDATE;
+        else template = customPrompts[promptKey] || PROMPTS[promptKey as keyof typeof PROMPTS] || "";
 
-            // 生成完整提示词
-            generateFullPrompt(promptKey);
-
-            setIsFullPromptView(false); // 默认为模板视图
-
-            setShowPromptModal(true);
-        }
+        const variables = getPromptVariables(promptKey, chapterNum);
+        return formatPrompt(template, variables);
     };
+
 
     // 监听editingPromptKey变化，重新生成完整提示词
-    useEffect(() => {
-        if (editingPromptKey && showPromptModal) {
-            generateFullPrompt(editingPromptKey);
-        }
-    }, [editingPromptKey, showPromptModal, customPrompts, PROMPTS, generatedData, inputs, stepCustomInstructions, writingStepState.viewChapter]);
 
-    const handleSavePrompt = (newPrompt: string) => {
-        if (editingPromptKey) {
-            setCustomPrompts(prev => ({
-                ...prev,
-                [editingPromptKey]: newPrompt
-            }));
-        }
-    };
-
-    const getActivePrompt = (key: string) => {
-        if (key === 'THEME_MATCH_PROMPT') return customPrompts[key] || THEME_MATCH_PROMPT;
-        if (key === 'STATE_UPDATE') return customPrompts[key] || PROMPTS.STATE_UPDATE;
-        return customPrompts[key] || PROMPTS[key as keyof typeof PROMPTS] || "";
-    };
-
-    const getDefaultPrompt = (key: string) => {
-        if (key === 'THEME_MATCH_PROMPT') return THEME_MATCH_PROMPT;
-        if (key === 'STATE_UPDATE') return PROMPTS.STATE_UPDATE;
-        return PROMPTS[key as keyof typeof PROMPTS] || "";
-    };
 
     const renderContent = () => {
         if (currentStep === 0) {
             return (
-                <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 pb-12">
-                    <div className="text-center space-y-2 mb-8 pt-8">
-                        <h2 className="text-3xl font-serif font-bold text-gray-900 tracking-tight">
+                <div className="max-w-3xl mx-auto space-y-5 animate-in fade-in slide-in-from-bottom-4 pb-6">
+                    <div className="text-center space-y-1 mb-4 pt-4">
+                        <h2 className="text-2xl font-serif font-bold text-gray-900 tracking-tight">
                             开启您的创作旅程
                         </h2>
-                        <p className="text-gray-400 font-hand text-xl tracking-wide">Tell me your story...</p>
+                        <p className="text-gray-400 font-hand text-lg tracking-wide">Tell me your story...</p>
                     </div>
 
-                    <div className="bg-white border border-gray-100 rounded-xl p-6 sm:p-8 shadow-sm">
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center">
+                    <div className="bg-white border border-gray-100 rounded-xl p-5 sm:p-6 shadow-sm">
+                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center">
                             <BookOpen size={14} className="mr-2" />
                             Core Concept
                         </h3>
 
-                        <div className="space-y-6">
+                        <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2 font-serif">
                                     核心脑洞 (Topic) <span className="text-black ml-1">*</span>
                                 </label>
                                 <textarea
-                                    className="w-full min-h-[140px] bg-gray-50 border-0 rounded-lg p-4 text-gray-900 placeholder:text-gray-400 focus:ring-1 focus:ring-black outline-none resize-none transition-all font-sans"
+                                    className="w-full min-h-[100px] bg-gray-50 border-0 rounded-lg p-3 text-gray-900 placeholder:text-gray-400 focus:ring-1 focus:ring-black outline-none resize-none transition-all font-sans text-sm"
                                     placeholder="请输入您的故事核心创意，例如：一个在修仙世界卖保险的穿越者..."
                                     value={inputs.topic}
                                     onChange={(e) => setInputs(prev => ({ ...prev, topic: e.target.value }))}
@@ -1321,6 +1343,9 @@ export default function App() {
                                         </optgroup>
                                         <optgroup label="女频">
                                             {TAGS.female.filter(t => t !== '全部').map(t => <option key={t} value={t}>{t}</option>)}
+                                        </optgroup>
+                                        <optgroup label="耽美/纯爱">
+                                            {(TAGS as any).danmei.filter((t: string) => t !== '全部').map((t: string) => <option key={t} value={t}>{t}</option>)}
                                         </optgroup>
                                     </select>
                                 </div>
@@ -1457,7 +1482,7 @@ export default function App() {
                                         自定义特殊要求
                                     </label>
                                     <textarea
-                                        className="w-full min-h-[80px] bg-gray-50 border-0 rounded-lg p-2.5 text-gray-900 text-sm focus:ring-1 focus:ring-black outline-none resize-none transition-all"
+                                        className="w-full min-h-[60px] bg-gray-50 border-0 rounded-lg p-2.5 text-gray-900 text-sm focus:ring-1 focus:ring-black outline-none resize-none transition-all"
                                         placeholder="额外的设定要求..."
                                         value={inputs.customRequirements}
                                         onChange={(e) => setInputs(prev => ({ ...prev, customRequirements: e.target.value }))}
@@ -1467,7 +1492,7 @@ export default function App() {
                         </div>
                     </div>
 
-                    <div className="flex justify-center pt-4">
+                    <div className="flex justify-center pt-2">
                         <button
                             onClick={() => {
                                 if (!inputs.topic.trim()) {
@@ -1477,8 +1502,7 @@ export default function App() {
                                 setIsInitCompleted(true);
                                 setCurrentStep(1);
                             }}
-                            disabled={!inputs.topic.trim()}
-                            className="px-8 py-3 bg-black text-white font-medium rounded-full hover:shadow-lg hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100 flex items-center text-sm tracking-wide"
+                            className="group px-6 py-2.5 bg-white border border-gray-200 hover:border-gray-900 text-gray-900 rounded-full transition-all shadow-sm hover:shadow-md flex items-center text-sm font-medium tracking-wide"
                         >
                             下一步：生成核心架构 <ArrowRight size={16} className="ml-2" />
                         </button>
@@ -1500,7 +1524,6 @@ export default function App() {
                     loadingMessage={loadingMessage}
                     copyToClipboard={copyToClipboard}
                     apiConfig={apiConfig}
-                    onEditPrompt={!__HIDE_PROMPT_MANAGEMENT__ ? handleShowPrompt : undefined}
                     onSyncContext={handleSyncContext}
                     onUpdateViewChapter={(chapterNum) => setWritingStepState(prev => ({ ...prev, viewChapter: chapterNum }))}
                     onUpdateSelectedTheme={(theme) => setWritingStepState(prev => ({ ...prev, selectedTheme: theme }))}
@@ -1517,48 +1540,37 @@ export default function App() {
             return (
                 <div className="flex flex-col space-y-6">
                     {/* Action Bar */}
-                    <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                        <h2 className="text-xl font-serif font-bold text-gray-900 flex items-center">
-                            {React.createElement(STEPS[currentStep].icon, { className: "mr-2 text-gray-400", size: 22 })}
+                    <div className="flex flex-wrap justify-between items-center gap-3 bg-white px-4 py-3 rounded-xl border border-gray-100 shadow-sm">
+                        <h2 className="text-lg font-serif font-bold text-gray-900 flex items-center">
+                            {React.createElement(STEPS[currentStep].icon, { className: "mr-2 text-gray-400", size: 18 })}
                             {STEPS[currentStep].title}
                         </h2>
-                        <div className="flex space-x-2 sm:space-x-3 flex-wrap justify-end w-full sm:w-auto">
+                        <div className="flex space-x-2 sm:space-x-3 flex-wrap justify-end w-auto">
                             {currentStepId === 'dna' && (
-                                <>
-                                    {!__HIDE_PROMPT_MANAGEMENT__ && (
-                                        <button
-                                            onClick={() => handleShowPrompt('JUDGE')}
-                                            className="text-gray-400 hover:text-gray-900 transition-colors p-3 rounded-lg hover:bg-gray-100"
-                                            title="编辑判官提示词"
-                                        >
-                                            <FileText size={18} />
-                                        </button>
-                                    )}
-                                    <button
-                                        onClick={handleJudge}
-                                        disabled={isJudging}
-                                        className={`px-4 py-2 bg-white border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 rounded-lg flex items-center transition-all ${isJudging ? 'opacity-50 cursor-not-allowed' : 'shadow-sm'} min-h-[42px] justify-center font-serif`}
-                                    >
-                                        {isJudging ? <RefreshCw size={16} className="mr-2 animate-spin" /> : <Gavel size={16} className="mr-2" />}
-                                        {isJudging ? '审判中...' : '判官审题'}
-                                    </button>
-                                </>
+                                <button
+                                    onClick={handleJudge}
+                                    disabled={isJudging}
+                                    className={`px-3 py-1.5 bg-white border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 rounded-lg flex items-center transition-all ${isJudging ? 'opacity-50 cursor-not-allowed' : 'shadow-sm'} min-h-[36px] justify-center font-serif text-sm font-medium`}
+                                >
+                                    {isJudging ? <RefreshCw size={14} className="mr-2 animate-spin" /> : <Gavel size={14} className="mr-2" />}
+                                    {isJudging ? '审判中...' : '判官审题'}
+                                </button>
                             )}
 
                             {content && (
                                 <button
                                     onClick={() => openCustomModal(STEPS[currentStep].title, (val) => handleGenerateStep(currentStepId, val))}
-                                    className="flex items-center px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 rounded-lg transition-colors border border-gray-200 min-h-[42px] justify-center shadow-sm"
+                                    className="flex items-center px-3 py-1.5 bg-white hover:bg-gray-50 text-gray-700 rounded-lg transition-colors border border-gray-200 min-h-[36px] justify-center shadow-sm text-sm font-medium"
                                 >
-                                    <RefreshCw size={16} className="mr-2" /> 重写/修改
+                                    <RefreshCw size={14} className="mr-2" /> 重写/修改
                                 </button>
                             )}
                             <button
                                 onClick={() => handleGenerateStep(currentStepId)}
                                 disabled={isGenerating}
-                                className={`flex items-center px-6 py-2 bg-black hover:bg-gray-800 text-white font-bold rounded-lg transition-all ${isGenerating ? 'opacity-50 cursor-not-allowed' : 'shadow-md hover:shadow-lg'} min-h-[42px] justify-center`}
+                                className={`flex items-center px-4 py-1.5 bg-white hover:bg-gray-50 text-stone-900 border border-gray-200 hover:border-gray-400 font-serif font-medium rounded-lg transition-all ${isGenerating ? 'opacity-50 cursor-not-allowed' : 'shadow-sm hover:shadow'} min-h-[36px] justify-center text-sm`}
                             >
-                                {isGenerating ? <RefreshCw className="animate-spin mr-2" size={16} /> : <Sparkles className="mr-2" size={16} />}
+                                {isGenerating ? <RefreshCw className="animate-spin mr-2" size={14} /> : <Sparkles className="mr-2" size={14} />}
                                 {content ? '重新生成' : '立即生成'}
                             </button>
                         </div>
@@ -1595,17 +1607,19 @@ export default function App() {
                     </div>
 
                     {/* Next Step Button */}
-                    {currentStep < STEPS.length - 1 && content && (
-                        <div className="flex justify-center p-8">
-                            <button
-                                onClick={() => setCurrentStep(currentStep + 1)}
-                                className="px-8 py-3 bg-black hover:bg-gray-800 text-white font-bold rounded-full shadow-lg transition-all transform hover:scale-105 hover:shadow-xl flex items-center"
-                            >
-                                下一步：{STEPS[currentStep + 1].title} <ArrowRight size={16} className="ml-2" />
-                            </button>
-                        </div>
-                    )}
-                </div>
+                    {
+                        currentStep < STEPS.length - 1 && content && (
+                            <div className="flex justify-center p-8">
+                                <button
+                                    onClick={() => setCurrentStep(currentStep + 1)}
+                                    className="group px-6 py-2.5 bg-white border border-gray-200 hover:border-gray-900 text-gray-900 rounded-full transition-all shadow-sm hover:shadow-md flex items-center text-sm font-medium tracking-wide"
+                                >
+                                    下一步：{STEPS[currentStep + 1].title} <ArrowRight size={16} className="ml-2 group-hover:translate-x-0.5 transition-transform" />
+                                </button>
+                            </div>
+                        )
+                    }
+                </div >
             );
         }
 
@@ -1615,9 +1629,9 @@ export default function App() {
 
             return (
                 <div className="h-full flex flex-col space-y-6">
-                    <div className="flex flex-wrap items-center justify-between bg-white p-4 rounded-xl border border-gray-100 shadow-sm gap-4">
-                        <h2 className="text-xl font-serif font-bold text-gray-900 flex items-center">
-                            <Activity className="mr-2 text-gray-400" size={20} />
+                    <div className="flex flex-wrap items-center justify-between bg-white px-4 py-3 rounded-xl border border-gray-100 shadow-sm gap-3">
+                        <h2 className="text-lg font-serif font-bold text-gray-900 flex items-center">
+                            <Activity className="mr-2 text-gray-400" size={18} />
                             角色状态库
                         </h2>
 
@@ -1628,7 +1642,7 @@ export default function App() {
                             </div>
                         </div>
 
-                        <div className="flex items-center space-x-2 sm:space-x-3 w-full sm:w-auto justify-end">
+                        <div className="flex items-center space-x-2 sm:space-x-3 w-auto justify-end">
                             {history.length > 0 && (
                                 <div className="relative flex-shrink-0">
                                     <select
@@ -1649,7 +1663,7 @@ export default function App() {
                             <button
                                 onClick={() => handleGenerateStep('state')}
                                 disabled={isGenerating}
-                                className={`flex items-center px-4 py-2 bg-black hover:bg-gray-800 text-white font-bold rounded-lg transition-all shadow-sm hover:shadow-md ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''} text-sm whitespace-nowrap`}
+                                className={`flex items-center px-4 py-1.5 bg-white hover:bg-gray-50 text-stone-900 border border-gray-200 hover:border-gray-400 font-serif font-medium rounded-lg transition-all ${isGenerating ? 'opacity-50 cursor-not-allowed' : 'shadow-sm hover:shadow'} min-h-[36px] justify-center text-sm whitespace-nowrap`}
                             >
                                 {isGenerating ? <RefreshCw size={14} className="animate-spin mr-2" /> : <RefreshCw size={14} className="mr-2" />}
                                 {history.length > 0 ? '重置状态' : '生成初始状态'}
@@ -1657,7 +1671,7 @@ export default function App() {
                         </div>
                     </div>
 
-                    <div className="flex-1 bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden min-h-[600px]">
+                    <div className="flex-1 bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden flex flex-col">
                         {currentArchive ? (
                             <div className="h-full grid grid-cols-1 lg:grid-cols-3 gap-0 divide-y lg:divide-y-0 lg:divide-x divide-gray-100">
                                 {/* 左侧信息区 */}
@@ -1710,10 +1724,17 @@ export default function App() {
                     {currentStep < STEPS.length - 1 && (
                         <div className="flex justify-center mt-6">
                             <button
-                                onClick={() => setCurrentStep(currentStep + 1)}
-                                className="px-8 py-3 bg-black hover:bg-gray-800 text-white font-bold rounded-full shadow-lg transition-all transform hover:scale-105 hover:shadow-xl flex items-center"
+                                onClick={() => {
+                                    if (STEPS[currentStep + 1]) {
+                                        setIsInitCompleted(true);
+                                        setCurrentStep(prev => prev + 1);
+                                    } else {
+                                        showAlert('已经是最后一步了', "info");
+                                    }
+                                }}
+                                className="group px-6 py-2.5 bg-white border border-gray-200 hover:border-gray-900 text-gray-900 rounded-full transition-all shadow-sm hover:shadow-md flex items-center text-sm font-medium tracking-wide"
                             >
-                                下一步：{STEPS[currentStep + 1].title} <ArrowRight size={16} className="ml-2" />
+                                下一步：{STEPS[currentStep + 1].title} <ArrowRight size={16} className="ml-2 group-hover:translate-x-0.5 transition-transform" />
                             </button>
                         </div>
                     )}
@@ -1724,10 +1745,10 @@ export default function App() {
         return (
             <div className="flex flex-col space-y-6">
                 {/* Action Bar */}
-                <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                <div className="flex flex-wrap justify-between items-center gap-3 bg-white px-4 py-3 rounded-xl border border-gray-100 shadow-sm">
                     {/* 左侧：标题 */}
-                    <h2 className="text-xl font-serif font-bold text-gray-900 flex items-center">
-                        {React.createElement(STEPS[currentStep].icon, { className: "mr-2 text-gray-400", size: 22 })}
+                    <h2 className="text-lg font-serif font-bold text-gray-900 flex items-center">
+                        {React.createElement(STEPS[currentStep].icon, { className: "mr-2 text-gray-400", size: 18 })}
                         {STEPS[currentStep].title}
                     </h2>
 
@@ -1736,30 +1757,40 @@ export default function App() {
                         {currentStepId === 'plot' && (
                             <button
                                 onClick={() => setShowPlotStructureModal(true)}
-                                className="flex items-center px-4 py-2 bg-gray-50 hover:bg-white border border-gray-200 text-gray-700 rounded-lg transition-all hover:shadow-sm"
+                                className="flex items-center px-3 py-1.5 bg-gray-50 hover:bg-white border border-gray-200 text-gray-700 rounded-lg transition-all hover:shadow-sm text-sm max-w-[160px] sm:max-w-[240px]"
                             >
-                                <LayoutList size={16} className="mr-2 text-gray-500" />
-                                结构: {selectedPlotStructure}
+                                <LayoutList size={14} className="mr-2 text-gray-500 shrink-0" />
+                                <span className="truncate">结构: {selectedPlotStructure}</span>
                             </button>
                         )}
                     </div>
 
                     {/* 右侧：其他按钮组 */}
-                    <div className="flex space-x-2 sm:space-x-3 flex-wrap justify-end w-full sm:w-auto">
+                    <div className="flex space-x-2 sm:space-x-3 flex-wrap justify-end w-auto">
+                        {currentStepId === 'plot' && (
+                            <button
+                                onClick={handlePlotCritique}
+                                disabled={isPlotCritiquing || !generatedData.plot}
+                                className={`px-3 py-1.5 bg-white border border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-300 rounded-lg flex items-center transition-all ${(isPlotCritiquing || !generatedData.plot) ? 'opacity-50 cursor-not-allowed' : 'shadow-sm'} min-h-[36px] justify-center font-serif text-sm font-medium`}
+                            >
+                                {isPlotCritiquing ? <RefreshCw size={14} className="mr-2 animate-spin" /> : <Activity size={14} className="mr-2" />}
+                                {isPlotCritiquing ? '诊疗中...' : '深度问诊'}
+                            </button>
+                        )}
                         {content && (
                             <button
                                 onClick={() => openCustomModal(STEPS[currentStep].title, (val) => handleGenerateStep(currentStepId, val))}
-                                className="flex items-center px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 rounded-lg transition-colors border border-gray-200 min-h-[42px] justify-center shadow-sm"
+                                className="flex items-center px-3 py-1.5 bg-white hover:bg-gray-50 text-gray-700 rounded-lg transition-colors border border-gray-200 min-h-[36px] justify-center shadow-sm text-sm font-medium"
                             >
-                                <RefreshCw size={16} className="mr-2" /> 重写/修改
+                                <RefreshCw size={14} className="mr-2" /> 重写/修改
                             </button>
                         )}
                         <button
                             onClick={() => handleGenerateStep(currentStepId)}
                             disabled={isGenerating}
-                            className={`flex items-center px-6 py-2 bg-black hover:bg-gray-800 text-white font-bold rounded-lg transition-all ${isGenerating ? 'opacity-50 cursor-not-allowed' : 'shadow-md hover:shadow-lg'} min-h-[42px] justify-center`}
+                            className={`flex items-center px-4 py-1.5 bg-white hover:bg-gray-50 text-stone-900 border border-gray-200 hover:border-gray-400 font-serif font-medium rounded-lg transition-all ${isGenerating ? 'opacity-50 cursor-not-allowed' : 'shadow-sm hover:shadow'} min-h-[36px] justify-center text-sm`}
                         >
-                            {isGenerating ? <RefreshCw className="animate-spin mr-2" size={16} /> : <Sparkles className="mr-2" size={16} />}
+                            {isGenerating ? <RefreshCw className="animate-spin mr-2" size={14} /> : <Sparkles className="mr-2" size={14} />}
                             {content ? '重新生成' : '立即生成'}
                         </button>
                     </div>
@@ -1798,9 +1829,9 @@ export default function App() {
                     <div className="flex justify-center p-8">
                         <button
                             onClick={() => setCurrentStep(currentStep + 1)}
-                            className="px-8 py-3 bg-black hover:bg-gray-800 text-white font-bold rounded-full shadow-lg transition-all transform hover:scale-105 hover:shadow-xl flex items-center"
+                            className="group px-6 py-2.5 bg-white border border-gray-200 hover:border-gray-900 text-gray-900 rounded-full transition-all shadow-sm hover:shadow-md flex items-center text-sm font-medium tracking-wide"
                         >
-                            下一步：{STEPS[currentStep + 1].title} <ArrowRight size={16} className="ml-2" />
+                            下一步：{STEPS[currentStep + 1].title} <ArrowRight size={16} className="ml-2 group-hover:translate-x-0.5 transition-transform" />
                         </button>
                     </div>
                 )}
@@ -1808,50 +1839,21 @@ export default function App() {
         );
     };
 
-    const relatedPromptKeys = (editingPromptKey === 'CHAPTER_1' || editingPromptKey === 'CHAPTER_NEXT')
-        ? ['CHAPTER_1', 'CHAPTER_NEXT']
-        : undefined;
+
 
     return (
         <div className="h-screen w-screen bg-stone-950 text-stone-100 flex font-sans">
             {/* 仅在未隐藏提示词管理功能时渲染提示词编辑和管理模态框 */}
             {!__HIDE_PROMPT_MANAGEMENT__ && (
                 <>
-                    <PromptEditorModal
-                        isOpen={showPromptModal}
-                        onClose={() => setShowPromptModal(false)}
-                        prompt={editingPromptKey ? getActivePrompt(editingPromptKey) : ""}
-                        defaultPrompt={editingPromptKey ? getDefaultPrompt(editingPromptKey) : ""}
-                        fullPrompt={fullPrompt}
-                        isFullPromptView={isFullPromptView}
-                        onTogglePromptView={() => setIsFullPromptView(prev => !prev)}
-                        onSave={handleSavePrompt}
-                        currentKey={editingPromptKey || undefined}
-                        relatedKeys={relatedPromptKeys}
-                        onKeyChange={(key) => {
-                            setEditingPromptKey(key);
-                            // 根据新的提示词类型更新当前查看的章节
-                            if (key === 'CHAPTER_1') {
-                                // 首章创作强制使用第1章
-                                setWritingStepState(prev => ({ ...prev, viewChapter: 1 }));
-                            } else if (key === 'CHAPTER_NEXT') {
-                                // 后续章节确保章节号大于等于2
-                                setWritingStepState(prev => ({
-                                    ...prev,
-                                    viewChapter: Math.max(prev.viewChapter, 2)
-                                }));
-                            }
-                        }}
-                        currentChapter={writingStepState.viewChapter}
-                        totalChapters={inputs.numberOfChapters}
-                        onChapterChange={(chapterNum) => setWritingStepState(prev => ({ ...prev, viewChapter: chapterNum }))}
-                    />
-
                     <PromptManagerModal
                         isOpen={showPromptManager}
                         onClose={() => setShowPromptManager(false)}
                         customPrompts={customPrompts}
                         onUpdatePrompts={setCustomPrompts}
+                        onGetFullPrompt={handleGetFullPrompt}
+                        currentChapter={writingStepState.viewChapter}
+                        totalChapters={generatedData.chapters.length}
                     />
                 </>
             )}
@@ -1887,6 +1889,12 @@ export default function App() {
                 onClose={() => setShowJudgeModal(false)}
                 content={judgeResult}
                 onSelectProposal={handleSelectJudgeProposal}
+            />
+
+            <PlotCritiqueModal
+                isOpen={showPlotCritiqueModal}
+                onClose={() => setShowPlotCritiqueModal(false)}
+                content={plotCritiqueResult}
             />
 
             <PlotStructureModal
@@ -1926,7 +1934,6 @@ export default function App() {
                             isActive={currentStep === idx}
                             isCompleted={idx === 0 ? isInitCompleted : (step.id === 'writing' ? generatedData.chapters.length > 0 : (idx > 0 && idx < 7 ? !!generatedData[step.id as keyof GeneratedData] : false))}
                             onClick={() => setCurrentStep(idx)}
-                            onShowPrompt={!__HIDE_PROMPT_MANAGEMENT__ && step.promptKey ? () => handleShowPrompt(step.promptKey!) : undefined}
                         />
                     ))}
                 </div>
@@ -1990,7 +1997,7 @@ export default function App() {
                         </div>
                     </div>
                     <div className="text-[10px] text-gray-400 text-center font-serif italic">
-                        Art Mind © 2025
+                        Story Mind © 2025
                     </div>
                 </div>
             </div>
@@ -2008,13 +2015,13 @@ export default function App() {
                     >
                         <List size={20} />
                     </button>
-                    <span className="font-serif font-bold text-gray-900">Art Mind</span>
+                    <span className="font-serif font-bold text-gray-900">Story Mind</span>
                     <span className="text-xs text-gray-400 font-hand">{STEPS[currentStep].title}</span>
                 </header>
 
-                <main className="flex-1 p-4 lg:p-12 overflow-auto h-full relative z-0">
+                <main className="flex-1 flex flex-col overflow-hidden relative z-0 h-full">
                     {/* Top Step Indicator for Desktop */}
-                    <div className="hidden md:flex justify-center mb-12">
+                    <div className="hidden md:flex justify-center mb-6 mt-6 shrink-0">
                         <div className="flex items-center space-x-4">
                             <div className="h-px w-12 bg-gray-200"></div>
                             <div className="w-8 h-8 rounded-full border border-black flex items-center justify-center bg-black text-white font-serif shadow-lg">
@@ -2025,7 +2032,10 @@ export default function App() {
                         </div>
                     </div>
 
-                    {renderContent()}
+                    {/* Content Area with Conditional Scrolling */}
+                    <div className={`flex-1 min-h-0 w-full p-4 lg:p-10 pt-0 ${['writing', 'state'].includes(STEPS[currentStep].id) ? 'overflow-hidden' : (STEPS[currentStep].id === 'init' ? 'overflow-y-auto no-scrollbar' : 'overflow-y-auto custom-scrollbar')}`}>
+                        {renderContent()}
+                    </div>
                 </main>
             </div>
         </div>

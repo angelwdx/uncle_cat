@@ -13,11 +13,11 @@ interface Props {
 const StepCard: React.FC<Props> = ({ title, icon: Icon, isActive, isCompleted, onClick, onShowPrompt }) => (
   <div
     onClick={onClick}
-    className={`flex items-center p-3 sm:p-4 rounded-xl cursor-pointer transition-all duration-200 border-2 relative group min-h-[64px] sm:min-h-[72px] ${isActive
-      ? 'bg-white border-stone-900 text-stone-900 shadow-sm'
+    className={`flex items-center p-3 sm:p-4 rounded-xl cursor-pointer transition-all duration-200 relative group min-h-[64px] sm:min-h-[72px] ${isActive
+      ? 'bg-white border-2 border-stone-900 text-stone-900 shadow-sm'
       : isCompleted
-        ? 'bg-white border-gray-200 text-gray-900 hover:border-gray-300'
-        : 'bg-white border-transparent text-gray-400 hover:bg-gray-50 hover:text-gray-900'
+        ? 'bg-white border border-gray-200 text-gray-900 hover:border-gray-300'
+        : 'bg-white border border-gray-100 text-gray-400 hover:bg-gray-50 hover:text-gray-900'
       }`}
   >
     <div className={`p-2 sm:p-2.5 rounded-lg mr-2 sm:mr-3 border ${isActive ? 'bg-stone-900 border-stone-900 text-white' : 'bg-gray-50 border-gray-100 text-gray-500'}`}>

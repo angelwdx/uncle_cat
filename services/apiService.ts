@@ -29,7 +29,7 @@ const getModelType = (baseUrl: string, provider?: string): ModelType => {
 // 构建API请求URL
 const buildApiUrl = (modelType: ModelType, baseUrl: string, textModel: string, apiKey: string): string => {
     const cleanBase = baseUrl.replace(/\/+$/, '');
-    
+
     switch (modelType) {
         case 'gemini':
             return `${cleanBase}/v1beta/models/${textModel}:generateContent?key=${apiKey}`;
@@ -55,7 +55,7 @@ const buildApiUrl = (modelType: ModelType, baseUrl: string, textModel: string, a
 // 构建请求头
 const buildHeaders = (modelType: ModelType, apiKey: string): Record<string, string> => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    
+
     switch (modelType) {
         case 'gemini':
             // Gemini API在URL中包含API密钥，不需要Authorization头
@@ -70,7 +70,7 @@ const buildHeaders = (modelType: ModelType, apiKey: string): Record<string, stri
             headers['Authorization'] = `Bearer ${apiKey}`;
             break;
     }
-    
+
     return headers;
 };
 
@@ -102,15 +102,16 @@ const buildRequestBody = (
     // 根据wordCount动态调整maxTokens（如果提供了wordCount）
     let adjustedMaxTokens = maxTokens;
     if (wordCount) {
-        // 优化tokens计算：1个中文汉字约等于1.5个tokens
-        // 添加50%的缓冲，确保AI有足够的tokens生成完整的章节内容
-        const estimatedTokens = Math.round(wordCount * 1.5 * 1.5);
+        // 优化tokens计算：大幅增加缓冲，避免创作长文时被截断
+        // 使用 5.0 倍系数，对于长窗口模型（如Gemini 32k）提供充足空间
+        // 对于短窗口模型（如DeepSeek 8k），后续的Math.min会确保不超限
+        const estimatedTokens = Math.round(wordCount * 5.0);
         // 确保不超过模型的最大限制
         adjustedMaxTokens = Math.min(estimatedTokens, maxTokens);
         // 为确保内容完整性，设置最小tokens限制
         adjustedMaxTokens = Math.max(adjustedMaxTokens, Math.round(wordCount * 1.2));
     }
-    
+
     switch (modelType) {
         case 'gemini':
             return {
@@ -166,15 +167,15 @@ const parseApiResponse = (modelType: ModelType, data: any): string => {
 
 export const generateContent = async (systemPrompt: string, userPrompt: string, config?: ApiConfig, wordCount?: number) => {
     // 确保config有合理的默认值
-    const safeConfig = config || {};
+    const safeConfig = (config || {}) as ApiConfig;
     const apiKeyToUse = safeConfig?.apiKey?.trim() || "";
     const baseUrl = safeConfig?.baseUrl?.trim() || "https://generativelanguage.googleapis.com";
-    
+
     // 检查API密钥是否为空
     if (!apiKeyToUse) {
         throw new Error('API密钥不能为空，请检查API配置。');
     }
-    
+
     // Use the stable alias 'gemini-2.5-flash' as default
     const textModel = safeConfig?.textModel === 'custom' ? safeConfig.customTextModel || 'gpt-4o' : (safeConfig?.textModel?.trim() || "gemini-2.5-flash");
 
@@ -190,16 +191,16 @@ export const generateContent = async (systemPrompt: string, userPrompt: string, 
         try {
             // 构建API请求URL
             const url = buildApiUrl(modelType, baseUrl, textModel, apiKeyToUse);
-            
+
             // 构建请求头
             const headers = buildHeaders(modelType, apiKeyToUse);
-            
+
             // 构建请求体，传递wordCount参数以动态调整maxTokens
             const body = buildRequestBody(modelType, systemPrompt, userPrompt, textModel, maxTokens, undefined, wordCount);
 
             // 记录请求开始时间
             const startTime = Date.now();
-            
+
             // 为不同模型设置差异化超时时间
             let timeout = 60000; // 默认60秒
             if (modelType === 'deepseek') {
@@ -207,7 +208,7 @@ export const generateContent = async (systemPrompt: string, userPrompt: string, 
             } else if (modelType === 'claude') {
                 timeout = 90000; // Claude模型增加到90秒
             }
-            
+
             // 添加超时机制
             const response = await fetch(url, {
                 method: 'POST',
@@ -215,13 +216,13 @@ export const generateContent = async (systemPrompt: string, userPrompt: string, 
                 body: JSON.stringify(body),
                 signal: AbortSignal.timeout(timeout)
             });
-            
+
             console.log(`[Generate Content] API request completed in ${(Date.now() - startTime)}ms for ${modelType} model`);
 
             if (!response.ok) {
                 const errorText = await response.text();
                 const error = new Error(`API Error: ${response.status} ${response.statusText} - ${errorText}`);
-                
+
                 // Only retry for server errors (5xx) and timeout errors
                 if (response.status >= 500 && response.status < 600) {
                     // Server error, retry
@@ -239,7 +240,7 @@ export const generateContent = async (systemPrompt: string, userPrompt: string, 
             }
 
             const data = await response.json();
-            
+
             // 解析API响应
             return parseApiResponse(modelType, data);
 
@@ -248,7 +249,7 @@ export const generateContent = async (systemPrompt: string, userPrompt: string, 
             const calculateDelay = (errorType: string) => {
                 // 基础延迟时间（毫秒）
                 let baseDelay = 1000;
-                
+
                 // 根据错误类型调整基础延迟
                 switch (errorType) {
                     case 'timeout':
@@ -260,28 +261,28 @@ export const generateContent = async (systemPrompt: string, userPrompt: string, 
                     default:
                         baseDelay = 1500;
                 }
-                
+
                 // 线性退避 + 抖动
                 const linearDelay = baseDelay * attempt;
                 const jitter = Math.random() * 500; // 添加0-500ms的抖动
                 return Math.min(linearDelay + jitter, 10000); // 最大延迟不超过10秒
             };
-            
+
             // 统一的重试逻辑
             const handleRetry = async (errorType: string, errorMessage: string) => {
                 attempt++;
                 console.warn(`Attempt ${attempt} failed (${errorType}): ${errorMessage}`);
-                
+
                 if (attempt >= maxRetries) {
                     return false; // 达到最大重试次数
                 }
-                
+
                 // 计算延迟
                 const delay = calculateDelay(errorType);
                 await new Promise(r => setTimeout(r, delay));
                 return true; // 继续重试
             };
-            
+
             // 检查是否是超时导致的AbortError
             if (e.name === 'AbortError') {
                 const modelName = modelType === 'deepseek' ? 'DeepSeek' : modelType === 'claude' ? 'Claude' : '此模型';
@@ -291,7 +292,7 @@ export const generateContent = async (systemPrompt: string, userPrompt: string, 
                 }
                 continue;
             }
-            
+
             // 检查是否是其他类型的超时错误
             if (e.name === 'TimeoutError' || e.message.includes('timeout')) {
                 const shouldRetry = await handleRetry('timeout', e.message);
@@ -300,7 +301,7 @@ export const generateContent = async (systemPrompt: string, userPrompt: string, 
                 }
                 continue;
             }
-            
+
             // 检查是否是网络错误
             if (e.name === 'TypeError' || e.message.includes('network') || e.message.includes('Failed to fetch')) {
                 const shouldRetry = await handleRetry('network', e.message);
@@ -309,10 +310,10 @@ export const generateContent = async (systemPrompt: string, userPrompt: string, 
                 }
                 continue;
             }
-            
+
             // 其他错误（客户端错误、无效API密钥等）- 不重试
             console.error(`Request failed without retry: ${e.message}`);
-            
+
             // 提供更友好的错误信息
             if (e.message.includes('401') || e.message.includes('API key')) {
                 throw new Error('API密钥错误：请检查API密钥是否正确配置。');
@@ -321,7 +322,7 @@ export const generateContent = async (systemPrompt: string, userPrompt: string, 
             } else if (e.message.includes('503') || e.message.includes('Service Unavailable')) {
                 throw new Error('服务不可用：API服务暂时不可用，请稍后重试。');
             }
-            
+
             throw e;
         }
     }
@@ -329,17 +330,17 @@ export const generateContent = async (systemPrompt: string, userPrompt: string, 
 
 export const generateSpeech = async (text: string, config?: ApiConfig) => {
     const apiKeyToUse = config?.apiKey?.trim() || "";
-    
+
     // 检查API密钥是否为空
     if (!apiKeyToUse) {
         throw new Error('语音生成失败：API密钥不能为空，请检查API配置。');
     }
-    
+
     // 检查文本是否为空
     if (!text || text.trim() === '') {
         throw new Error('语音生成失败：请输入要转换为语音的文本。');
     }
-    
+
     // TTS is strictly Gemini for now in this app structure
     const maxRetries = 3;
     let attempt = 0;
@@ -368,17 +369,17 @@ export const generateSpeech = async (text: string, config?: ApiConfig) => {
                 const errorText = await response.text();
                 throw new Error(`语音生成失败：${response.status} ${response.statusText} - ${errorText}`);
             }
-            
+
             const data = await response.json();
             const base64Audio = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
             if (!base64Audio) {
                 throw new Error("语音生成失败：未收到音频数据，请重试。");
             }
-            
+
             return base64Audio;
         } catch (e: any) {
             attempt++;
-            
+
             // 提供更具体的错误信息
             if (e.name === 'AbortError') {
                 if (attempt >= maxRetries) {
@@ -391,11 +392,11 @@ export const generateSpeech = async (text: string, config?: ApiConfig) => {
             } else if (e.message.includes('503') || e.message.includes('Service Unavailable')) {
                 throw new Error('语音生成失败：TTS服务暂时不可用，请稍后重试。');
             }
-            
+
             if (attempt >= maxRetries) {
                 throw new Error(`语音生成失败：${e.message}`);
             }
-            
+
             // 使用指数退避策略
             const delay = 1000 * Math.pow(2, attempt);
             await new Promise(r => setTimeout(r, delay));
@@ -446,13 +447,13 @@ export const testConnection = async (config: ApiConfig): Promise<{ success: bool
 
         // 获取模型类型
         const modelType = getModelType(baseUrl, config.provider);
-        
+
         // 构建API请求URL
         const url = buildApiUrl(modelType, baseUrl, textModel, apiKeyToUse);
-        
+
         // 构建请求头
         const headers = buildHeaders(modelType, apiKeyToUse);
-        
+
         // Simple test prompt that should return a short response quickly
         const testSystemPrompt = "You are a helpful assistant. Please respond with 'OK' if you can understand this message.";
         const testUserPrompt = "Test connection";
@@ -473,10 +474,10 @@ export const testConnection = async (config: ApiConfig): Promise<{ success: bool
         }
 
         const data = await response.json();
-        
+
         // 解析API响应
         const responseText = parseApiResponse(modelType, data);
-        
+
         if (responseText && responseText !== "No content generated.") {
             return {
                 success: true,

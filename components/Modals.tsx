@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Settings, Sparkles, FileText, Gavel, Save, RotateCcw, ChevronDown, Search, LayoutList, CheckCircle2, AlertCircle, Copy, RefreshCw } from 'lucide-react';
+import { X, Settings, Sparkles, FileText, Gavel, Save, RotateCcw, ChevronDown, Search, LayoutList, CheckCircle2, AlertCircle, Copy, RefreshCw, Activity } from 'lucide-react';
 import { ApiConfig } from '../types';
 import MarkdownViewer from './MarkdownViewer';
 import { PROMPTS, THEME_MATCH_PROMPT } from '../constants';
@@ -32,7 +32,10 @@ export const PromptManagerModal: React.FC<{
     onClose: () => void;
     customPrompts: Record<string, string>;
     onUpdatePrompts: (newPrompts: Record<string, string>) => void;
-}> = ({ isOpen, onClose, customPrompts, onUpdatePrompts }) => {
+    onGetFullPrompt?: (key: string, chapterNum?: number) => string;
+    currentChapter?: number;
+    totalChapters?: number;
+}> = ({ isOpen, onClose, customPrompts, onUpdatePrompts, onGetFullPrompt, currentChapter = 1, totalChapters = 10 }) => {
     // Combine all keys
     const allKeys = useMemo(() => [
         ...Object.keys(PROMPTS),
@@ -44,6 +47,8 @@ export const PromptManagerModal: React.FC<{
     const [currentValue, setCurrentValue] = useState<string>("");
     const [searchTerm, setSearchTerm] = useState("");
     const [unsavedChanges, setUnsavedChanges] = useState(false);
+    const [isFullPromptView, setIsFullPromptView] = useState(false);
+    const [previewChapter, setPreviewChapter] = useState(currentChapter);
 
     // Get default value helper
     const getDefaultValue = (key: string) => {
@@ -52,10 +57,12 @@ export const PromptManagerModal: React.FC<{
     };
 
     // Load initial value when selected key changes
+    // Load initial value when selected key changes
     useEffect(() => {
         const val = customPrompts[selectedKey] || getDefaultValue(selectedKey);
         setCurrentValue(val);
         setUnsavedChanges(false);
+        setIsFullPromptView(false); // Reset view mode when switching keys
     }, [selectedKey, customPrompts, isOpen]);
 
     // Handle text change
@@ -187,15 +194,94 @@ export const PromptManagerModal: React.FC<{
                         </div>
                     </div>
 
-                    {/* Editor */}
+                    {/* Editor / Preview */}
                     <div className="flex-1 relative flex flex-col bg-gray-50/30">
-                        <div className="absolute inset-0 p-6">
-                            <textarea
-                                value={currentValue}
-                                onChange={handleChange}
-                                className="w-full h-full bg-white border border-gray-200 rounded-xl p-6 font-mono text-sm text-gray-800 resize-none outline-none focus:border-black focus:ring-1 focus:ring-black/5 transition-all custom-scrollbar leading-relaxed shadow-sm"
-                                spellCheck={false}
-                            />
+                        {/* Tabs */}
+                        <div className="flex border-b border-gray-100 bg-white shadow-sm z-10">
+                            <button
+                                onClick={() => setIsFullPromptView(false)}
+                                className={`px-5 py-2.5 text-sm font-medium transition-all border-b-2 flex items-center ${!isFullPromptView
+                                    ? 'border-orange-500 text-orange-600 bg-orange-50/50'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                                    }`}
+                            >
+                                <Settings size={14} className="mr-2" /> 模板提示词
+                            </button>
+                            {onGetFullPrompt && (
+                                <div className="flex items-center">
+                                    <button
+                                        onClick={() => setIsFullPromptView(true)}
+                                        className={`px-5 py-2.5 text-sm font-medium transition-all border-b-2 flex items-center ${isFullPromptView
+                                            ? 'border-emerald-500 text-emerald-600 bg-emerald-50/50'
+                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                                            }`}
+                                    >
+                                        <Sparkles size={14} className="mr-2" /> 完整提示词 (AI实际接收)
+                                    </button>
+
+                                    {/* Preview Options for Chapters */}
+                                    {isFullPromptView && (selectedKey === 'CHAPTER_1' || selectedKey === 'CHAPTER_NEXT') && (
+                                        <div className="ml-4 flex items-center space-x-2 text-xs">
+                                            <span className="text-gray-400">预览章节:</span>
+                                            <div className="relative group">
+                                                <select
+                                                    value={previewChapter}
+                                                    onChange={(e) => setPreviewChapter(parseInt(e.target.value))}
+                                                    className="appearance-none bg-white border border-gray-200 text-gray-700 text-xs rounded pl-2 pr-6 py-1 focus:border-emerald-500 focus:outline-none cursor-pointer font-medium hover:bg-gray-50 transition-colors shadow-sm"
+                                                >
+                                                    {selectedKey === 'CHAPTER_1' ? (
+                                                        <option value={1}>第 1 章</option>
+                                                    ) : (
+                                                        Array.from({ length: (totalChapters || 1) }, (_, i) => i + 2).map(chapter => (
+                                                            <option key={chapter} value={chapter}>第 {chapter} 章</option>
+                                                        ))
+                                                    )}
+                                                </select>
+                                                <ChevronDown className="absolute right-1.5 top-1.5 text-gray-400 pointer-events-none" size={10} />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex-1 relative">
+                            {!isFullPromptView ? (
+                                <div className="absolute inset-0 p-6 flex flex-col">
+                                    <div className="mb-2 flex items-center justify-center p-2 bg-orange-50 border border-orange-100 rounded-lg text-xs text-orange-700">
+                                        <AlertCircle size={12} className="mr-1.5" />
+                                        <span>在此修改提示词将影响接下来的生成结果。请务必保留关键的变量占位符（如 {'{STORY_DNA}'}）。</span>
+                                    </div>
+                                    <textarea
+                                        value={currentValue}
+                                        onChange={handleChange}
+                                        className="flex-1 w-full bg-white border border-gray-200 rounded-xl p-6 font-mono text-sm text-gray-800 resize-none outline-none focus:border-black focus:ring-1 focus:ring-black/5 transition-all custom-scrollbar leading-relaxed shadow-sm"
+                                        spellCheck={false}
+                                        placeholder="在此输入提示词模板..."
+                                    />
+                                </div>
+                            ) : (
+                                <div className="absolute inset-0 flex flex-col">
+                                    <div className="p-3 bg-emerald-50 border-b border-emerald-100 text-emerald-700 text-xs flex items-center justify-center shrink-0">
+                                        <CheckCircle2 size={12} className="mr-1.5" />
+                                        <span>以下是AI实际接收内容的实时预览，所有变量已根据当前项目状态替换。</span>
+                                        <button
+                                            onClick={() => {
+                                                if (onGetFullPrompt) {
+                                                    const content = onGetFullPrompt(selectedKey, previewChapter);
+                                                    navigator.clipboard.writeText(content);
+                                                }
+                                            }}
+                                            className="ml-4 flex items-center text-emerald-800 hover:text-emerald-950 font-bold underline decoration-emerald-300 hover:decoration-emerald-800 transition-all"
+                                        >
+                                            <Copy size={10} className="mr-1" /> 复制内容
+                                        </button>
+                                    </div>
+                                    <div className="flex-1 w-full bg-white p-6 font-mono text-sm text-gray-800 overflow-y-auto custom-scrollbar whitespace-pre-wrap leading-relaxed">
+                                        {onGetFullPrompt ? onGetFullPrompt(selectedKey, previewChapter) : "无法获取预览..."}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -306,173 +392,7 @@ export const PlotStructureModal: React.FC<{
     );
 };
 
-// 改名为 PromptEditorModal 并增加编辑功能
-export const PromptEditorModal: React.FC<{
-    isOpen: boolean;
-    onClose: () => void;
-    prompt: string;
-    defaultPrompt: string;
-    onSave: (newPrompt: string) => void;
-    currentKey?: string;
-    relatedKeys?: string[];
-    onKeyChange?: (key: string) => void;
-    fullPrompt: string;
-    isFullPromptView: boolean;
-    onTogglePromptView: () => void;
-    currentChapter?: number;
-    totalChapters?: number;
-    onChapterChange?: (chapter: number) => void;
-}> = ({ isOpen, onClose, prompt, defaultPrompt, onSave, currentKey, relatedKeys, onKeyChange, fullPrompt, isFullPromptView, onTogglePromptView, currentChapter = 1, totalChapters = 12, onChapterChange }) => {
-    const [value, setValue] = useState(prompt);
 
-    // 当打开或 prompt 变化时更新内部状态
-    useEffect(() => {
-        setValue(prompt);
-    }, [prompt, isOpen]);
-
-    if (!isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-            <div className="bg-white border border-gray-100 rounded-xl w-full max-w-3xl h-[85vh] flex flex-col shadow-2xl animate-in fade-in zoom-in-95 ring-1 ring-black/5">
-                <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-white h-16">
-                    <div className="flex items-center space-x-4">
-                        <h3 className="text-lg font-serif font-bold text-gray-900 flex items-center">
-                            <FileText className="mr-2 text-black" size={20} />
-                            {relatedKeys && relatedKeys.length > 1 ? '切换提示词专家：' : '编辑系统提示词'}
-                        </h3>
-
-                        {relatedKeys && relatedKeys.length > 1 && onKeyChange && currentKey && (
-                            <div className="relative group">
-                                <select
-                                    value={currentKey}
-                                    onChange={(e) => onKeyChange(e.target.value)}
-                                    className="appearance-none bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded pl-3 pr-8 py-1 focus:border-black focus:outline-none cursor-pointer font-bold hover:bg-gray-100 transition-colors"
-                                >
-                                    {relatedKeys.map(key => (
-                                        <option key={key} value={key}>
-                                            {PROMPT_NAMES[key] || key}
-                                        </option>
-                                    ))}
-                                </select>
-                                <ChevronDown className="absolute right-2 top-1.5 text-gray-500 pointer-events-none" size={14} />
-                            </div>
-                        )}
-
-                        {/* 章节选择器 */}
-                        {(currentKey === 'CHAPTER_1' || currentKey === 'CHAPTER_NEXT') && (
-                            <div className="relative group">
-                                <select
-                                    value={currentChapter}
-                                    onChange={(e) => onChapterChange?.(parseInt(e.target.value))}
-                                    className="appearance-none bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded pl-3 pr-8 py-1 focus:border-black focus:outline-none cursor-pointer font-bold hover:bg-gray-100 transition-colors"
-                                >
-                                    {/* 根据当前提示词决定显示哪些章节 */}
-                                    {currentKey === 'CHAPTER_1' ? (
-                                        /* 首章创作只显示第1章 */
-                                        <option key={1} value={1}>
-                                            第 1 章
-                                        </option>
-                                    ) : (
-                                        /* 后续章节显示第2章及以后 */
-                                        Array.from({ length: totalChapters - 1 }, (_, i) => i + 2).map(chapter => (
-                                            <option key={chapter} value={chapter}>
-                                                第 {chapter} 章
-                                            </option>
-                                        ))
-                                    )}
-                                </select>
-                                <ChevronDown className="absolute right-2 top-1.5 text-gray-500 pointer-events-none" size={14} />
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                        <button
-                            onClick={() => setValue(defaultPrompt)}
-                            className="text-xs flex items-center text-gray-400 hover:text-amber-600 px-3 py-1 rounded hover:bg-amber-50 transition-colors"
-                            title="恢复默认提示词"
-                        >
-                            <RotateCcw size={14} className="mr-1" /> 恢复默认
-                        </button>
-                        <button onClick={onClose} className="text-gray-400 hover:text-gray-900 transition-colors">
-                            <X size={24} />
-                        </button>
-                    </div>
-                </div>
-
-                <div className="flex-1 flex flex-col min-h-0 bg-gray-50/30">
-                    <div className="flex border-b border-gray-100 bg-white">
-                        <button
-                            onClick={() => onTogglePromptView()}
-                            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${!isFullPromptView ? 'border-orange-500 text-orange-600 bg-orange-50' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
-                        >
-                            模板提示词
-                        </button>
-                        <button
-                            onClick={() => onTogglePromptView()}
-                            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${isFullPromptView ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
-                        >
-                            完整提示词 (AI实际接收)
-                        </button>
-                    </div>
-
-                    {!isFullPromptView ? (
-                        <>
-                            <div className="p-2 bg-orange-50 text-orange-700 text-xs text-center border-b border-orange-100 flex items-center justify-center">
-                                <AlertCircle size={12} className="mr-1.5" />
-                                在此修改提示词将影响接下来的生成结果。变量（如 {'{topic}'}）会被自动替换，请保留它们。
-                            </div>
-                            <textarea
-                                value={value}
-                                onChange={(e) => setValue(e.target.value)}
-                                className="flex-1 w-full bg-white p-6 font-mono text-sm text-gray-800 resize-none outline-none focus:bg-white transition-colors custom-scrollbar leading-relaxed"
-                                spellCheck={false}
-                                placeholder="在此输入提示词..."
-                            />
-                        </>
-                    ) : (
-                        <div className="flex-1 flex flex-col min-h-0">
-                            <div className="p-2 bg-emerald-50 text-emerald-700 text-xs text-center border-b border-emerald-100 flex items-center justify-center">
-                                <Sparkles size={12} className="mr-1.5" />
-                                以下是AI实际接收的完整提示词，所有变量已替换为当前项目的实际值。
-                            </div>
-                            <div className="flex-1 w-full bg-white p-6 font-mono text-sm text-gray-800 overflow-y-auto custom-scrollbar whitespace-pre-wrap leading-relaxed">
-                                {fullPrompt || "暂无完整提示词..."}
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                <div className="p-4 border-t border-gray-100 bg-white rounded-b-xl flex justify-between space-x-3">
-                    {isFullPromptView && (
-                        <button
-                            onClick={() => navigator.clipboard.writeText(fullPrompt)}
-                            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm flex items-center font-medium"
-                            title="复制完整提示词"
-                        >
-                            <Copy size={16} className="mr-2" /> 复制完整提示词
-                        </button>
-                    )}
-                    {!isFullPromptView && (
-                        <button
-                            onClick={() => {
-                                onSave(value);
-                                onClose();
-                            }}
-                            className="px-6 py-2 bg-black hover:bg-gray-800 text-white rounded-lg transition-colors font-bold flex items-center text-sm shadow-md"
-                        >
-                            <Save size={16} className="mr-2" /> 保存修改
-                        </button>
-                    )}
-                    <button onClick={onClose} className="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-lg transition-colors text-sm font-medium">
-                        关闭
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
 
 export const CustomRequestModal: React.FC<{ isOpen: boolean; onClose: () => void; onSubmit: (val: string) => void; title: string }> = ({ isOpen, onClose, onSubmit, title }) => {
     const [value, setValue] = useState("");
@@ -579,6 +499,42 @@ export const JudgeResultModal: React.FC<{
                             </button>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export const PlotCritiqueModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    content: string;
+}> = ({ isOpen, onClose, content }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+            <div className="bg-white border border-emerald-200 rounded-xl w-full max-w-4xl h-[85vh] flex flex-col shadow-2xl animate-in fade-in zoom-in-95 ring-4 ring-emerald-50 ring-offset-0">
+                <div className="flex justify-between items-center p-4 border-b border-emerald-100 bg-emerald-50/50 h-16 rounded-t-xl">
+                    <h3 className="text-lg font-serif font-bold text-emerald-900 flex items-center">
+                        <Activity className="mr-2 text-emerald-700" size={20} /> 剧情医生 · 诊断报告
+                    </h3>
+                    <button onClick={onClose} className="text-emerald-400 hover:text-emerald-900 transition-colors">
+                        <X size={24} />
+                    </button>
+                </div>
+                <div className="flex-1 p-8 overflow-y-auto bg-white">
+                    <div className="prose prose-emerald max-w-none prose-sm sm:prose-base prose-headings:font-serif prose-headings:text-emerald-950 prose-p:text-gray-800 prose-strong:text-emerald-900 leading-relaxed font-serif">
+                        <MarkdownViewer content={content} />
+                    </div>
+                </div>
+                <div className="p-4 border-t border-emerald-100 bg-emerald-50/30 rounded-b-xl flex justify-center">
+                    <button
+                        onClick={onClose}
+                        className="px-8 py-2.5 bg-emerald-900 hover:bg-emerald-800 text-white rounded-lg transition-colors font-bold shadow-sm"
+                    >
+                        确认诊断
+                    </button>
                 </div>
             </div>
         </div>

@@ -44,18 +44,18 @@ const icons = {
 
 // 颜色映射
 const colors = {
-  success: 'text-emerald-400',
-  error: 'text-red-400',
-  warning: 'text-amber-400',
-  info: 'text-blue-400'
+  success: 'text-emerald-600',
+  error: 'text-red-600',
+  warning: 'text-amber-600',
+  info: 'text-blue-600'
 };
 
 // 背景色映射
 const bgColors = {
-  success: 'bg-emerald-900/30 border-emerald-800/50',
-  error: 'bg-red-900/30 border-red-800/50',
-  warning: 'bg-amber-900/30 border-amber-800/50',
-  info: 'bg-blue-900/30 border-blue-800/50'
+  success: 'bg-emerald-50 border-emerald-100',
+  error: 'bg-red-50 border-red-100',
+  warning: 'bg-amber-50 border-amber-100',
+  info: 'bg-blue-50 border-blue-100'
 };
 
 // 自定义弹窗组件
@@ -119,58 +119,58 @@ const CustomAlert: React.FC = () => {
     <>
       {alertState.isOpen && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-stone-900 border border-stone-800 rounded-xl w-full max-w-md shadow-2xl animate-in fade-in zoom-in-95">
+          <div className="bg-white border border-gray-100 rounded-xl w-full max-w-md shadow-2xl animate-in fade-in zoom-in-95">
             {/* 弹窗内容 */}
             <div className="p-6">
               <div className="flex items-start space-x-4">
                 {/* 图标 */}
-                <div className={`p-3 rounded-full ${bgColors[alertState.type]}`}>
+                <div className={`p-3 rounded-full border ${bgColors[alertState.type]}`}>
                   <IconComponent className={`h-6 w-6 ${colors[alertState.type]}`} />
                 </div>
-                
+
                 {/* 标题和消息 */}
                 <div className="flex-1">
                   {alertState.options.title && (
-                    <h3 className="text-lg font-bold text-white mb-2">
+                    <h3 className="text-lg font-bold text-gray-900 mb-2 font-serif">
                       {alertState.options.title}
                     </h3>
                   )}
-                  <p className="text-stone-300 whitespace-pre-line">
+                  <p className="text-gray-600 whitespace-pre-line font-sans">
                     {alertState.message}
                   </p>
                 </div>
-                
+
                 {/* 关闭按钮 */}
                 {!alertState.options.cancelText && (
-                  <button 
+                  <button
                     onClick={handleClose}
-                    className="text-stone-500 hover:text-white transition-colors"
+                    className="text-gray-400 hover:text-gray-900 transition-colors"
                   >
                     <X size={20} />
                   </button>
                 )}
               </div>
             </div>
-            
+
             {/* 按钮区域 */}
             {(alertState.options.cancelText || alertState.options.confirmText) && (
-              <div className="flex justify-end space-x-3 p-4 border-t border-stone-800 bg-stone-950/50">
+              <div className="flex justify-end space-x-3 p-4 border-t border-gray-100 bg-gray-50/50">
                 {alertState.options.cancelText && (
                   <button
                     onClick={handleCancel}
-                    className="px-4 py-2 bg-stone-800 hover:bg-stone-700 text-white rounded-lg transition-colors"
+                    className="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 rounded-lg transition-all shadow-sm"
                   >
                     {alertState.options.cancelText}
                   </button>
                 )}
                 <button
                   onClick={handleConfirm}
-                  className={`px-4 py-2 text-white rounded-lg transition-colors ${colors[alertState.type]}`}
+                  className={`px-4 py-2 text-white rounded-lg transition-all shadow-sm hover:shadow-md font-medium`}
                   style={{
-                    backgroundColor: alertState.type === 'success' ? '#10b981' : 
-                                      alertState.type === 'error' ? '#ef4444' :
-                                      alertState.type === 'warning' ? '#f59e0b' :
-                                      '#3b82f6'
+                    backgroundColor: alertState.type === 'success' ? '#059669' :
+                      alertState.type === 'error' ? '#dc2626' :
+                        alertState.type === 'warning' ? '#d97706' :
+                          '#2563eb'
                   }}
                 >
                   {alertState.options.confirmText || '确认'}

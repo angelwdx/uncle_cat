@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { RefreshCw, Save, ChevronLeft, ChevronRight, Edit, ThumbsUp, Star, MinusCircle, Check, Download, Sparkles, Skull, MessageSquare, Zap, Eye, PenTool, FileText, GitMerge, Activity, X } from 'lucide-react';
 import { UserInputs, GeneratedData, ApiConfig, ThemeMatch } from '../types';
-import { THEME_MATCH_PROMPT, THEME_LIBRARY_CONTENT, PROMPTS } from '../constants';
+import { PROMPTS, THEME_MATCH_PROMPT, THEME_LIBRARY_CONTENT } from '../constants';
 import { generateContent, formatPrompt, cleanAIResponse } from '../services/apiService';
 import MarkdownViewer from './MarkdownViewer';
 import { useAlert } from './CustomAlert';
@@ -19,7 +19,6 @@ interface Props {
     loadingMessage?: string; // New prop for specific status text
     copyToClipboard: (text: string) => void;
     apiConfig: ApiConfig;
-    onEditPrompt: (key: string) => void;
     onSyncContext: (chapterNum: number) => void;
     onUpdateViewChapter: (chapterNum: number) => void;
     onUpdateSelectedTheme: (theme: any) => void;
@@ -38,7 +37,6 @@ const WritingStep: React.FC<Props> = ({
     loadingMessage,
     copyToClipboard,
     apiConfig,
-    onEditPrompt,
     onSyncContext,
     onUpdateViewChapter,
     onUpdateSelectedTheme,
@@ -97,11 +95,11 @@ const WritingStep: React.FC<Props> = ({
                 // 2. 找到当前章节对应的部分（章节号从1开始，数组索引从1开始）
                 if (chapterSections.length > viewChapter) {
                     // 获取当前章节内容，添加回章节标题前缀
-                    const chapterContent = `### 第${viewChapter}章${chapterSections[viewChapter]}`;
-                    console.log(`[WritingStep] Chapter ${viewChapter} blueprint content:`, chapterContent);
+                    const chapterContent = `### 第${viewChapter}章${chapterSections[viewChapter]} `;
+                    console.log(`[WritingStep] Chapter ${viewChapter} blueprint content: `, chapterContent);
 
                     // 3. 增强标题提取，支持多种格式
-                    let extractedTitle = `第${viewChapter}章`;
+                    let extractedTitle = `第${viewChapter} 章`;
 
                     // 主要提取方式：针对"### 第X章 - 标题"格式
                     const titleLineMatch = chapterContent.match(/^###\s*第\d+章\s*[-:：\s]+(.+?)(?=\n|$)/m);
@@ -134,27 +132,27 @@ const WritingStep: React.FC<Props> = ({
                     }
 
                     // 增强容错：确保标题不为空
-                    if (!extractedTitle || extractedTitle === `第${viewChapter}章`) {
+                    if (!extractedTitle || extractedTitle === `第${viewChapter} 章`) {
                         console.log(`[WritingStep] Using default title for chapter ${viewChapter}`);
                     } else {
-                        console.log(`[WritingStep] Successfully extracted title:`, extractedTitle);
+                        console.log(`[WritingStep] Successfully extracted title: `, extractedTitle);
                     }
 
-                    console.log(`[WritingStep] Extracted title:`, extractedTitle, `(titleLineMatch:`, titleLineMatch, `)`);
+                    console.log(`[WritingStep] Extracted title: `, extractedTitle, `(titleLineMatch: `, titleLineMatch, `)`);
 
                     // 4. 只有未手动编辑过的标题才从蓝图中提取
                     const title = manuallyEditedTitles.has(viewChapter)
-                        ? (existingTitle || `第${viewChapter}章`)
+                        ? (existingTitle || `第${viewChapter} 章`)
                         : extractedTitle;
-                    console.log(`[WritingStep] Final title (after manual edit check):`, title, `(manuallyEdited:`, manuallyEditedTitles.has(viewChapter), `)`);
+                    console.log(`[WritingStep] Final title(after manual edit check): `, title, `(manuallyEdited: `, manuallyEditedTitles.has(viewChapter), `)`);
 
                     // 5. 增强参数提取，添加更多容错机制
                     const extractField = (fieldName: string, defaultValue: string = '') => {
                         // 支持多种格式变体：加粗、斜体、无格式
                         const formats = [
-                            new RegExp(`[\*_]*${fieldName}[\*_]*[:：]\s*([^\n]+)`, 'i'),
-                            new RegExp(`${fieldName}\s*[:：]\s*([^\n]+)`, 'i'),
-                            new RegExp(`[\*_]*${fieldName}[\*_]*\s*[-:]\s*([^\n]+)`, 'i')
+                            new RegExp(`[\* _]* ${fieldName} [\* _] * [:：]\s * ([^\n] +)`, 'i'),
+                            new RegExp(`${fieldName} \s * [:：]\s * ([^\n] +)`, 'i'),
+                            new RegExp(`[\* _]* ${fieldName} [\* _] *\s * [-: ]\s * ([^\n] +)`, 'i')
                         ];
 
                         for (const regex of formats) {
@@ -193,14 +191,14 @@ const WritingStep: React.FC<Props> = ({
                             .replace(/_/g, '') // 清理下划线格式
                             .trim();
 
-                        console.log(`[WritingStep] Raw twist value:`, rawTwist);
+                        console.log(`[WritingStep] Raw twist value: `, rawTwist);
 
                         // 支持多种星级格式变体
                         if (/★★★★★/.test(rawTwist)) twist = '极高';
                         else if (/★★★★/.test(rawTwist)) twist = '高';
                         else if (/★★★/.test(rawTwist)) twist = '中';
                         else if (/★★/.test(rawTwist)) twist = '低';
-                        console.log(`[WritingStep] Final twist value:`, twist);
+                        console.log(`[WritingStep] Final twist value: `, twist);
                     }
 
                     // 7. 提取本章简述，增强多行内容处理
@@ -227,7 +225,7 @@ const WritingStep: React.FC<Props> = ({
                                 .replace(/^\s+|\s+$/g, ''); // 清理首尾空格
                         }
                     }
-                    console.log(`[WritingStep] Extracted summary:`, blueprintSummary, `(summaryMatch:`, summaryMatch, `)`);
+                    console.log(`[WritingStep] Extracted summary: `, blueprintSummary, `(summaryMatch: `, summaryMatch, `)`);
 
                     const summary = existingSummary || blueprintSummary;
 
@@ -242,23 +240,23 @@ const WritingStep: React.FC<Props> = ({
                         summary
                     };
 
-                    console.log(`[WritingStep] Final extracted params for chapter ${viewChapter}:`, finalParams);
+                    console.log(`[WritingStep] Final extracted params for chapter ${viewChapter}: `, finalParams);
 
                     setChapterParams(finalParams);
                 } else {
-                    console.log(`[WritingStep] No blueprint section found for chapter ${viewChapter}. Sections available: ${chapterSections.length - 1}`);
+                    console.log(`[WritingStep] No blueprint section found for chapter ${viewChapter}.Sections available: ${chapterSections.length - 1} `);
                     // 增强容错：使用现有数据或默认值
                     setChapterParams(prev => ({
                         ...prev,
-                        title: existingTitle || `第${viewChapter}章`,
+                        title: existingTitle || `第${viewChapter} 章`,
                         summary: existingSummary || ''
                     }));
                 }
             } catch (error) {
-                console.error(`[WritingStep] Error processing blueprint for chapter ${viewChapter}:`, error);
+                console.error(`[WritingStep] Error processing blueprint for chapter ${viewChapter}: `, error);
                 // 增强容错：发生错误时使用现有数据或默认值
                 setChapterParams({
-                    title: existingTitle || `第${viewChapter}章`,
+                    title: existingTitle || `第${viewChapter} 章`,
                     role: '', purpose: '', suspense: '正常', foreshadowing: '', twist: '低',
                     summary: existingSummary || ''
                 });
@@ -266,7 +264,7 @@ const WritingStep: React.FC<Props> = ({
         } else {
             console.log(`[WritingStep] No blueprint available`);
             setChapterParams({
-                title: existingTitle || `第${viewChapter}章`,
+                title: existingTitle || `第${viewChapter} 章`,
                 role: '', purpose: '', suspense: '正常', foreshadowing: '', twist: '低',
                 summary: existingSummary || ''
             });
@@ -276,7 +274,7 @@ const WritingStep: React.FC<Props> = ({
 
     const startEditing = () => {
         const currentTitle = chapterParams.title;
-        if (currentTitle === `第${viewChapter}章`) {
+        if (currentTitle === `第${viewChapter} 章`) {
             setTempTitle("");
         } else {
             setTempTitle(currentTitle);
@@ -323,7 +321,7 @@ const WritingStep: React.FC<Props> = ({
                             themes = [singleTheme];
                         } else {
                             // 尝试清理文本，移除可能的Markdown格式
-                            const cleanedText = text.replace(/```json|```/g, '').trim();
+                            const cleanedText = text.replace(/```json | ```/g, '').trim();
                             themes = JSON.parse(cleanedText);
                         }
                     }
@@ -358,7 +356,7 @@ const WritingStep: React.FC<Props> = ({
                 apiProvider: apiConfig.provider
             });
             // 只在控制台显示错误，不在UI中弹出提示
-            // showAlert(`题材匹配失败: ${e.message}`, "error");
+            // showAlert(`题材匹配失败: ${ e.message } `, "error");
             setMatchedThemes([]);
         } finally {
             setIsThemeGenerating(false);
@@ -381,7 +379,7 @@ const WritingStep: React.FC<Props> = ({
         const element = document.createElement("a");
         const file = new Blob([currentChapter.content], { type: 'text/plain' });
         element.href = URL.createObjectURL(file);
-        const safeTitle = chapterParams.title || `Chapter-${viewChapter}`;
+        const safeTitle = chapterParams.title || `Chapter - ${viewChapter} `;
         element.download = `第${viewChapter}章 ${safeTitle}.txt`;
         document.body.appendChild(element);
         element.click();
@@ -389,7 +387,7 @@ const WritingStep: React.FC<Props> = ({
     };
 
     const getActiveParams = () => {
-        const effectiveTitle = chapterParams.title || `第${viewChapter}章`;
+        const effectiveTitle = chapterParams.title || `第${viewChapter} 章`;
         return {
             ...chapterParams,
             title: effectiveTitle
@@ -403,7 +401,10 @@ const WritingStep: React.FC<Props> = ({
             const systemPrompt = PROMPTS.DEMON_EDITOR;
             const userMessage = `请对以下章节进行魔鬼编辑点评：
 
-${currentChapter.content}`;
+${currentChapter.content}
+
+【重要资源：独家题材公式库】
+${THEME_LIBRARY_CONTENT} `;
 
             // 使用generateContent函数调用API，包含完整的错误处理和重试机制
             const text = await generateContent(systemPrompt, userMessage, apiConfig);
@@ -425,7 +426,8 @@ ${currentChapter.content}`;
                 selected_option: option,
                 original_content: currentChapter.content,
                 critique_content: demonCritique,
-                chapter_title: chapterParams.title || `第${viewChapter}章`
+                chapter_title: chapterParams.title || `第${viewChapter} 章`,
+                THEME_LIBRARY: THEME_LIBRARY_CONTENT
             });
 
             // 使用generateContent函数调用API，包含完整的错误处理和重试机制
@@ -452,13 +454,13 @@ ${currentChapter.content}`;
         setIsFeedbackEditing(true);
         try {
             const prompt = formatPrompt(PROMPTS.USER_FEEDBACK_REWRITE, {
-                chapter_title: chapterParams.title || `第${viewChapter}章`,
+                chapter_title: chapterParams.title || `第${viewChapter} 章`,
                 chapter_purpose: chapterParams.purpose || '未设定',
                 suspense_level: chapterParams.suspense,
                 user_feedback: userFeedback
             });
 
-            const fullPrompt = `${prompt}\n\n【当前章节草稿】\n${currentChapter?.content || '(无内容)'}`;
+            const fullPrompt = `${prompt} \n\n【当前章节草稿】\n${currentChapter?.content || '(无内容)'} `;
 
             // 使用generateContent函数调用API，包含完整的错误处理和重试机制
             const rawContent = await generateContent("", fullPrompt, apiConfig);
@@ -537,7 +539,7 @@ ${currentChapter.content}
 
     const handleTitleSave = () => {
         setIsTitleEditing(false);
-        const newTitle = tempTitle.trim() || `第${viewChapter}章`;
+        const newTitle = tempTitle.trim() || `第${viewChapter} 章`;
         setChapterParams(prev => ({ ...prev, title: newTitle }));
         onUpdateChapterTitle(viewChapter, newTitle);
 
@@ -563,7 +565,7 @@ ${currentChapter.content}
     return (
         <div className="flex flex-col h-full bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm">
             {/* Header */}
-            <div className="p-4 border-b border-gray-100 bg-white flex flex-wrap justify-between items-center gap-3 shrink-0">
+            <div className="px-4 py-3 border-b border-gray-100 bg-white flex flex-wrap justify-between items-center gap-3 shrink-0">
                 <div className="flex items-center space-x-2 sm:space-x-3">
                     <button
                         disabled={viewChapter === 1}
@@ -582,7 +584,7 @@ ${currentChapter.content}
                             </span>
                             {!isTitleEditing && (
                                 <span className="text-xs text-gray-500 truncate max-w-[150px] md:max-w-xs font-serif">
-                                    {chapterParams.role ? `定位: ${chapterParams.role}` : ''}
+                                    {chapterParams.role ? `定位: ${chapterParams.role} ` : ''}
                                 </span>
                             )}
                         </div>
@@ -600,7 +602,7 @@ ${currentChapter.content}
                             </div>
                         ) : (
                             <h2 className="font-bold text-base md:text-lg flex items-center cursor-pointer hover:text-gray-600 h-8 font-serif text-gray-900" onClick={startEditing}>
-                                {chapterParams.title === `第${viewChapter}章` ? <span className="text-gray-400 italic font-normal text-sm">点击输入标题...</span> : chapterParams.title}
+                                {chapterParams.title === `第${viewChapter} 章` ? <span className="text-gray-400 italic font-normal text-sm">点击输入标题...</span> : chapterParams.title}
                                 <Edit size={12} className="ml-2 opacity-30 group-hover:opacity-100" />
                             </h2>
                         )}
@@ -629,7 +631,7 @@ ${currentChapter.content}
                 <div className="flex items-center space-x-2 sm:space-x-3">
                     <button
                         onClick={() => setIsEditMode(!isEditMode)}
-                        className={`p-3 rounded-lg transition-colors min-w-[40px] flex items-center justify-center border ${isEditMode ? 'bg-black text-white border-black shadow-md' : 'bg-white hover:bg-gray-50 text-gray-400 hover:text-gray-600 border-gray-200'}`}
+                        className={`p-3 rounded-lg transition-colors min-w-[40px] flex items-center justify-center border ${isEditMode ? 'bg-black text-white border-black shadow-md' : 'bg-white hover:bg-gray-50 text-gray-400 hover:text-gray-600 border-gray-200'} `}
                         title={isEditMode ? "切换到阅读模式" : "切换到编辑模式"}
                         type="button"
                     >
@@ -690,10 +692,10 @@ ${currentChapter.content}
                         <div className="flex flex-col items-center justify-center flex-1 text-gray-900 space-y-6 py-20">
                             <RefreshCw className="animate-spin w-10 h-10 text-gray-900" />
                             <div className="text-center">
-                                <p className="font-bold text-lg font-serif">{loadingMessage || `AI 正在${currentChapter?.content ? '重新' : ''}撰写 ${chapterParams.title || `第${viewChapter}章`}`}</p>
+                                <p className="font-bold text-lg font-serif">{loadingMessage || `AI 正在${currentChapter?.content ? '重新' : ''}撰写 ${chapterParams.title || `第${viewChapter}章`} `}</p>
                                 {!loadingMessage && (
                                     <p className="text-sm text-gray-500 mt-2 font-serif italic">
-                                        {selectedTheme ? `正在应用 [${selectedTheme.name}] 构建情节...` : '正在构建场景、安排伏笔...'}
+                                        {selectedTheme ? `正在应用[${selectedTheme.name}] 构建情节...` : '正在构建场景、安排伏笔...'}
                                     </p>
                                 )}
                             </div>
@@ -748,30 +750,14 @@ ${currentChapter.content}
                 </div>
 
                 {/* Right Tools Panel - Mobile Responsive */}
-                <div className={`
-                    w-full lg:w-80 bg-white border-l border-gray-100 flex flex-col shrink-0 h-full
-                    lg:flex
-                    fixed lg:relative
-                    top-0 right-0 z-20
-                    transform transition-transform duration-300 ease-in-out
-                    ${isRightPanelOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}
-                `}>
+                <div className={`w-full lg:w-80 bg-white border-l border-gray-100 flex flex-col shrink-0 h-full lg:flex fixed lg:relative top-0 right-0 z-20 transform transition-transform duration-300 ease-in-out ${isRightPanelOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}>
                     {/* Theme Recommendation */}
                     <div className="flex flex-col max-h-[40%] min-h-0 border-b border-gray-100">
                         <div className="p-4 border-b border-gray-100 shrink-0 bg-white sticky top-0 z-10 flex justify-between items-center">
                             <h3 className="text-xs font-bold text-gray-400 uppercase flex items-center">
-                                <Sparkles size={14} className="mr-2 text-amber-500" /> 题材公式推荐
+                                <Sparkles size={14} className="mr-2 text-gray-900" /> 题材公式推荐
                             </h3>
                             <div className="flex space-x-2">
-                                {!__HIDE_PROMPT_MANAGEMENT__ && (
-                                    <button
-                                        onClick={() => onEditPrompt('THEME_MATCH_PROMPT')}
-                                        className="text-gray-400 hover:text-gray-900 transition-colors"
-                                        title="查看/编辑题材匹配提示词"
-                                    >
-                                        <FileText size={12} />
-                                    </button>
-                                )}
                                 {/* Mobile Close Button */}
                                 <button
                                     onClick={() => setIsRightPanelOpen(false)}
@@ -793,10 +779,10 @@ ${currentChapter.content}
                                         className={`p-3 rounded-lg border cursor-pointer transition-all text-xs ${selectedTheme?.code === theme.code
                                             ? 'bg-orange-50 border-orange-200 shadow-sm'
                                             : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300'
-                                            }`}
+                                            } `}
                                     >
                                         <div className="flex justify-between items-start mb-2">
-                                            <span className={`font-bold ${selectedTheme?.code === theme.code ? 'text-orange-700' : 'text-gray-900'}`}>
+                                            <span className={`font-bold ${selectedTheme?.code === theme.code ? 'text-orange-700' : 'text-gray-900'} `}>
                                                 {theme.name}
                                             </span>
                                             {renderRecBadge(theme.level)}
@@ -811,7 +797,7 @@ ${currentChapter.content}
                                                     onGenerate(viewChapter, params, theme);
                                                 }}
                                                 disabled={isGenerating}
-                                                className={`w-full py-1.5 bg-black hover:bg-gray-800 text-white text-xs font-bold rounded flex items-center justify-center transition-colors shadow-sm ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                className={`w-full py-1.5 bg-black hover:bg-gray-800 text-white text-xs font-bold rounded flex items-center justify-center transition-colors shadow-sm ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''} `}
                                                 type="button"
                                             >
                                                 {isGenerating ? (
@@ -845,12 +831,13 @@ ${currentChapter.content}
                             {/* Humanize Rewrite Tool */}
                             <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
                                 <h4 className="font-bold text-sm text-gray-900 mb-3 flex items-center">
-                                    <PenTool size={16} className="mr-2 text-indigo-500" /> 人性化润色
+                                    <PenTool size={16} className="mr-2 text-gray-900" /> 人性化润色
                                 </h4>
                                 {!showHumanizeInput ? (
                                     <button
                                         onClick={handleShowHumanizeInput}
-                                        className="w-full py-2 bg-white hover:bg-gray-50 text-gray-900 rounded text-xs font-bold transition-colors border border-gray-200 shadow-sm"
+                                        disabled={!currentChapter?.content}
+                                        className="w-full py-2 bg-white hover:bg-gray-50 text-gray-900 rounded text-xs font-bold transition-colors border border-gray-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         开始润色
                                     </button>
@@ -887,9 +874,6 @@ ${currentChapter.content}
                                     <h4 className="font-bold text-sm text-gray-900 flex items-center">
                                         <Skull size={16} className="mr-2 text-gray-900" /> 魔鬼编辑
                                     </h4>
-                                    {!__HIDE_PROMPT_MANAGEMENT__ && (
-                                        <button onClick={() => onEditPrompt('DEMON_EDITOR')} className="text-gray-300 hover:text-gray-600" title="编辑提示词"><FileText size={12} /></button>
-                                    )}
                                 </div>
                                 <button
                                     onClick={handleDemonCritique}
@@ -921,13 +905,14 @@ ${currentChapter.content}
                             <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
                                 <div className="flex justify-between items-center mb-3">
                                     <h4 className="font-bold text-sm text-gray-900 flex items-center">
-                                        <MessageSquare size={16} className="mr-2 text-emerald-500" /> 用户反馈
+                                        <MessageSquare size={16} className="mr-2 text-gray-900" /> 用户反馈
                                     </h4>
                                 </div>
                                 {!showFeedbackInput ? (
                                     <button
                                         onClick={() => setShowFeedbackInput(true)}
-                                        className="w-full py-2 bg-white hover:bg-gray-50 text-gray-900 rounded text-xs font-bold transition-colors border border-gray-200 shadow-sm"
+                                        disabled={!currentChapter?.content}
+                                        className="w-full py-2 bg-white hover:bg-gray-50 text-gray-900 rounded text-xs font-bold transition-colors border border-gray-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         输入修改意见
                                     </button>
