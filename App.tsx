@@ -51,7 +51,7 @@ export default function App() {
         provider: 'google',
         baseUrl: 'https://gemini.txtbg.cn',
         apiKey: '',
-        textModel: 'gemini-2.5-flash'
+        textModel: 'gemini-3-flash'
     });
 
     const [generatedData, setGeneratedData] = useState<GeneratedData>({
