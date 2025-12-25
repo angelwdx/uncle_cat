@@ -5,7 +5,6 @@ import {
     Settings, RefreshCw, Sparkles, Copy, FileText, Play, Gavel,
     Clock, Archive, LayoutDashboard, LayoutList, ArrowRight
 } from 'lucide-react';
-import storyMindLogo from './assets/story_mind_logo.png'; // 导入图片作为模块
 import {
     ApiConfig, Chapter, GeneratedData, UserInputs, StepDefinition, StateArchive
 } from './types';
@@ -1910,7 +1909,7 @@ export default function App() {
             <div className={`w-56 sm:w-64 bg-white border-r border-gray-100 flex flex-col fixed inset-y-0 left-0 z-20 transform transition-transform duration-300 md:static md:transform-none ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:flex shadow-sm`}>
                 <div className="p-8 border-b border-gray-100 flex flex-col items-center">
                     <img
-                        src={storyMindLogo}
+                        src="/favicon.png"
                         alt="Story Mind"
                         className="w-auto h-20 mb-2 object-contain grayscale hover:grayscale-0 transition-all duration-500"
                     />
