@@ -1422,10 +1422,44 @@ export default function App() {
                                                 }
                                                 setIsGenerating(true);
                                                 try {
-                                                    const systemPrompt = "你是一个专业的小说命名专家。";
-                                                    const userPrompt = `根据以下信息生成一个小说名称（只返回书名）：\n核心创意：${inputs.topic}\n题材：${inputs.genre}\n基调：${inputs.tone || '未指定'}`;
+                                                    // 1. 使用更直接、更有网文感的系统提示
+                                                    const systemPrompt = "你是一个深耕网文市场多年的爆款主编，最擅长根据题材起出极具点击率的书名。请直接输出一个最合适的书名，禁止任何解释语。";
+
+                                                    // 2. 优化用户指令，强调基于内容而非角色本身
+                                                    const userPrompt = `
+                                                        请根据以下需求生成一个吸引人的小说书名：
+                                                        【核心脑洞】：${inputs.topic}
+                                                        【题材分类】：${inputs.genre}
+                                                        【故事基调】：${inputs.tone || '未指定'}
+                                                        
+                                                        注意：
+                                                        - 必须紧扣“${inputs.topic}”的具体内容创作。
+                                                        - 禁止使用“网文”、“起名”、“实验室”等作为书名的一部分。
+                                                        - 书名要通俗易懂且带有网文独有的“钩子”或“爽点”。
+                                                        - 直接输出结果，格式为：书名：xxx
+                                                    `;
+
                                                     const result = await generateContent(systemPrompt, userPrompt, apiConfig);
-                                                    const title = result.trim().replace(/["""]/g, '');
+
+                                                    // 3. 增强解析逻辑：确保提取出真正的书名
+                                                    let title = "";
+                                                    const lines = result.split('\n').map(l => l.trim()).filter(l => l);
+
+                                                    // 寻找包含“书名”的行
+                                                    const titleLine = lines.find(l => l.includes('书名')) || lines[0];
+
+                                                    if (titleLine) {
+                                                        // 替换掉所有前缀标签（如“书名:”、“1.”、“* ”等）
+                                                        title = titleLine.replace(/^.*?[：:]/, '').replace(/^[\d.*\- ]+/, '');
+                                                    }
+
+                                                    // 4. 清理杂质
+                                                    title = title.replace(/[《》""'']|\*\*|__/g, '').replace(/[。，.]$/, '').trim();
+                                                    // 如果解析出来的还是太长（超过20个字且包含换行），可能解析失败了，兜底只取第一行
+                                                    if (title.length > 20 && title.includes('\n')) {
+                                                        title = title.split('\n')[0].trim();
+                                                    }
+
                                                     setInputs(prev => ({ ...prev, novelTitle: title }));
                                                 } catch (error) {
                                                     console.error('生成书名失败:', error);

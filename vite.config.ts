@@ -5,23 +5,31 @@ import { viteSingleFile } from "vite-plugin-singlefile";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
+  const isSingleFile = env.VITE_SINGLE_FILE === 'true';
+
   return {
     server: {
       port: 3000,
       host: '0.0.0.0',
     },
-    plugins: [react(), viteSingleFile()],
+    plugins: [
+      react(),
+      isSingleFile && viteSingleFile()
+    ].filter(Boolean),
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
       }
     },
     build: {
-      outDir: 'dist',
-      assetsInlineLimit: 100000000, // 100MB，确保所有资源都被内联
+      outDir: isSingleFile ? 'dist-single' : 'dist',
+      assetsInlineLimit: isSingleFile ? 100000000 : 4096, // 标准模式下不强制内联所有资源
       rollupOptions: {
         output: {
-          manualChunks: undefined
+          manualChunks: isSingleFile ? undefined : {
+            'vendor-react': ['react', 'react-dom'],
+            'vendor-markdown': ['react-markdown', 'remark-gfm']
+          }
         }
       }
     },

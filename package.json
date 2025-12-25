@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "build:hide-prompts": "cross-env VITE_HIDE_PROMPT_MANAGEMENT=true vite build",
+    "build": "cross-env VITE_SINGLE_FILE=false vite build",
+    "build:single": "cross-env VITE_SINGLE_FILE=true vite build",
+    "build:hide-prompts": "cross-env VITE_HIDE_PROMPT_MANAGEMENT=true VITE_SINGLE_FILE=false vite build",
+    "build:hide-prompts-single": "cross-env VITE_HIDE_PROMPT_MANAGEMENT=true VITE_SINGLE_FILE=true vite build",
     "preview": "vite preview"
   },
   "dependencies": {
