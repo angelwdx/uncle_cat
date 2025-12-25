@@ -860,19 +860,19 @@ ${currentChapter.content}
                                             value={humanizePrompt}
                                             onChange={(e) => setHumanizePrompt(e.target.value)}
                                             placeholder="在此输入参考范文（可选），AI将模仿其风格进行润色..."
-                                            className="w-full h-24 bg-gray-50 border border-gray-200 rounded p-2 text-xs text-gray-700 outline-none focus:border-indigo-500 focus:bg-white transition-all resize-none"
+                                            className="w-full h-24 bg-gray-50 border border-gray-200 rounded p-2 text-xs text-gray-700 outline-none focus:border-black focus:bg-white transition-all resize-none"
                                         />
                                         <div className="flex space-x-2">
                                             <button
                                                 onClick={handleHumanizeRewrite}
                                                 disabled={isHumanizeRewriting}
-                                                className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs font-bold transition-colors disabled:opacity-50"
+                                                className="flex-1 py-2 bg-black hover:bg-gray-800 text-white rounded text-xs font-bold transition-colors disabled:opacity-50 shadow-sm"
                                             >
                                                 {isHumanizeRewriting ? <RefreshCw className="animate-spin w-3 h-3 mx-auto" /> : '确认润色'}
                                             </button>
                                             <button
                                                 onClick={handleCancelHumanize}
-                                                className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded text-xs transition-colors"
+                                                className="px-3 py-2 bg-white hover:bg-gray-50 text-gray-600 rounded text-xs transition-colors border border-gray-200"
                                             >
                                                 取消
                                             </button>
@@ -937,19 +937,19 @@ ${currentChapter.content}
                                             value={userFeedback}
                                             onChange={(e) => setUserFeedback(e.target.value)}
                                             placeholder="请输入具体的修改意见..."
-                                            className="w-full h-24 bg-gray-50 border border-gray-200 rounded p-2 text-xs text-gray-700 outline-none focus:border-emerald-500 focus:bg-white transition-all resize-none"
+                                            className="w-full h-24 bg-gray-50 border border-gray-200 rounded p-2 text-xs text-gray-700 outline-none focus:border-black focus:bg-white transition-all resize-none"
                                         />
                                         <div className="flex space-x-2">
                                             <button
                                                 onClick={handleUserFeedbackRewrite}
                                                 disabled={!userFeedback.trim() || isFeedbackEditing}
-                                                className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold transition-colors disabled:opacity-50"
+                                                className="flex-1 py-2 bg-black hover:bg-gray-800 text-white rounded text-xs font-bold transition-colors disabled:opacity-50 shadow-sm"
                                             >
                                                 {isFeedbackEditing ? <RefreshCw className="animate-spin w-3 h-3 mx-auto" /> : '确认修改'}
                                             </button>
                                             <button
                                                 onClick={() => setShowFeedbackInput(false)}
-                                                className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded text-xs transition-colors"
+                                                className="px-3 py-2 bg-white hover:bg-gray-50 text-gray-600 rounded text-xs transition-colors border border-gray-200"
                                             >
                                                 取消
                                             </button>
