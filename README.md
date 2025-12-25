@@ -25,8 +25,8 @@
 
 1. **克隆仓库**
    ```bash
-   git clone https://github.com/angelwdx/uncle_cat.git
-   cd uncle_cat
+   git clone https://github.com/angelwdx/story-mind.git
+   cd story-mind
    ```
 
 2. **安装依赖**
@@ -40,7 +40,7 @@
    ```
 
 4. **访问应用**
-   打开浏览器访问 `http://localhost:5173`
+   打开浏览器访问 `http://localhost:3000`
 
 ### 生产构建
 
@@ -68,7 +68,7 @@ npm run preview
 ## 项目结构
 
 ```
-uncle_cat/
+story-mind/
 ├── components/          # React 组件
 ├── services/           # 服务层
 ├── public/             # 静态资源
@@ -114,10 +114,16 @@ npm run preview    # 预览构建结果
 
 ## 联系方式
 
-- GitHub Issues：https://github.com/angelwdx/uncle_cat/issues
-- 项目主页：https://github.com/angelwdx/uncle_cat
+- GitHub Issues：https://github.com/angelwdx/story-mind/issues
+- 项目主页：https://github.com/angelwdx/story-mind
 
 ## 更新日志
+
+### v1.1.0（2025-12-25）
+
+- 项目迁移至新仓库 `story-mind`
+- 优化开发预览配置并在端口 3000 上运行
+- 更新文档和 README
 
 ### v1.0.0（2025-12-12）
 
