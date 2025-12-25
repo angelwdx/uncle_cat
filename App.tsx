@@ -5,7 +5,7 @@ import {
     Settings, RefreshCw, Sparkles, Copy, FileText, Play, Gavel,
     Clock, Archive, LayoutDashboard, LayoutList, ArrowRight
 } from 'lucide-react';
-import unclecatlogo from './public/unclecatlogo.png'; // 导入图片作为模块
+import storyMindLogo from './assets/story_mind_logo.png'; // 导入图片作为模块
 import {
     ApiConfig, Chapter, GeneratedData, UserInputs, StepDefinition, StateArchive
 } from './types';
@@ -1910,8 +1910,8 @@ export default function App() {
             <div className={`w-56 sm:w-64 bg-white border-r border-gray-100 flex flex-col fixed inset-y-0 left-0 z-20 transform transition-transform duration-300 md:static md:transform-none ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:flex shadow-sm`}>
                 <div className="p-8 border-b border-gray-100 flex flex-col items-center">
                     <img
-                        src={unclecatlogo}
-                        alt="Art Mind"
+                        src={storyMindLogo}
+                        alt="Story Mind"
                         className="w-16 h-16 rounded-full mb-3 shadow-sm grayscale hover:grayscale-0 transition-all duration-500"
                     />
                     <h1 className="font-serif text-xl font-bold tracking-wider text-gray-900">Story Mind <span className="text-gray-400 font-light text-sm align-top">3.0</span></h1>
