@@ -1205,16 +1205,22 @@ export default function App() {
                         inCurrentChapter = false;
                         inNextChapter = true;
                     } else if (inCurrentChapter) {
-                        if (line.includes('**核心作用：**')) chapterRole = line.replace('**核心作用：**', '').trim();
-                        if (line.includes('**剧情安排：**')) chapterPurpose = line.replace('**剧情安排：**', '').trim();
-                        if (line.includes('**悬念设置：**')) suspenseLevel = line.replace('**悬念设置：**', '').trim();
-                        if (line.includes('**伏笔埋藏：**')) foreshadowing = line.replace('**伏笔埋藏：**', '').trim();
-                        if (line.includes('**反转指数：**')) plotTwistLevel = line.replace('**反转指数：**', '').trim();
-                        if (line.includes('**本章摘要：**')) shortSummary = line.replace('**本章摘要：**', '').trim();
+                        // 增强解析：使用正则匹配 **键名** 和内容，支持多种冒号
+                        const fieldMatch = line.match(/^\s*[-*]?\s*\*\*(.*?)[：:]\*\*\s*(.*)/);
+                        if (fieldMatch) {
+                            const [_, label, value] = fieldMatch;
+                            if (label.includes('核心作用')) chapterRole = value.trim();
+                            if (label.includes('剧情安排')) chapterPurpose = value.trim();
+                            if (label.includes('悬念设置')) suspenseLevel = value.trim();
+                            if (label.includes('伏笔埋藏') || label.includes('埋线取线')) foreshadowing = value.trim();
+                            if (label.includes('反转指数') || label.includes('认知颠覆')) plotTwistLevel = value.trim();
+                            if (label.includes('本章摘要') || label.includes('本章简述')) shortSummary = value.trim();
+                        }
                     } else if (inNextChapter) {
-                        if (line.includes('**核心作用：**')) {
-                            nextChapterPurpose = line.replace('**核心作用：**', '').trim();
-                            break; // 找到下一章信息后停止
+                        const fieldMatch = line.match(/^\s*[-*]?\s*\*\*(.*?)[：:]\*\*\s*(.*)/);
+                        if (fieldMatch && fieldMatch[1].includes('核心作用')) {
+                            nextChapterPurpose = fieldMatch[2].trim();
+                            break;
                         }
                     }
                 }
