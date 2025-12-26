@@ -311,6 +311,7 @@ export default function App() {
         // 对于第1章，直接使用初始状态
         if (targetChapterNum === 1) {
             return {
+                chapterNum: 0,
                 characterState: generatedData.state || "暂无角色状态",
                 globalSummary: generatedData.globalSummary || generatedData.dna || "暂无全局摘要",
                 chapterSummary: "暂无章节摘要"
@@ -326,6 +327,7 @@ export default function App() {
         // 如果找到存档，使用存档中的状态；否则使用当前全局状态
         if (latestArchive) {
             return {
+                chapterNum: latestArchive.chapterNum,
                 characterState: latestArchive.characterState,
                 globalSummary: latestArchive.globalSummary,
                 chapterSummary: latestArchive.chapterSummary
@@ -334,6 +336,7 @@ export default function App() {
 
         // 没有找到存档，使用当前全局状态
         return {
+            chapterNum: 0,
             characterState: generatedData.state || "暂无角色状态",
             globalSummary: generatedData.globalSummary || generatedData.dna || "暂无全局摘要",
             chapterSummary: "暂无章节摘要"
@@ -974,6 +977,15 @@ export default function App() {
                 next_chapter_purpose: nextChapterPurpose
             };
 
+            // 架构审计日志：长篇创作上下文快照
+            console.log(`[Architecture] 正在创作第 ${chapterNum} 章，上下文快照:`, {
+                source: "findLatestStateArchive",
+                using_archive_from_chapter: latestArchive.chapterNum,
+                has_previous_excerpt: !!variables.previous_chapter_excerpt,
+                global_summary_length: variables.global_summary?.length || 0,
+                character_state_exists: !!variables.character_state
+            });
+
             const prompt = formatPrompt(template, variables);
             const wordCount = inputs.wordCount || 2000;
             const rawResult = await generateContent(prompt, `请创作第${chapterNum}章`, apiConfig, wordCount);
@@ -1274,6 +1286,17 @@ export default function App() {
                 plot_structure: selectedPlotStructure
             };
         }
+        // 架构调试日志：输出变量注入快照
+        console.log(`[Prompt Engine] 注入变量快照 (${promptKey}):`, {
+            novel_title: variables.novel_title,
+            chapter_num: chapterNum,
+            has_dna: !!variables.STORY_DNA || !!variables.dna,
+            has_world: !!variables.world_building,
+            has_characters: !!variables.character_dynamics,
+            has_blueprint: !!variables.CHAPTER_BLUEPRINT,
+            has_summary: !!variables.global_summary
+        });
+
         return variables;
     };
 
