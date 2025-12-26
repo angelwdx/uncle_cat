@@ -32,7 +32,6 @@
 
 ```mermaid
 graph TD
-    %% 构图教学 1: classDef 定义外观，提升专业度
     classDef storage fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
     classDef process fill:#fff3e0,stroke:#ff6f00,stroke-width:2px;
     classDef ai fill:#f3e5f5,stroke:#4a148c,stroke-width:2px;
@@ -55,7 +54,6 @@ graph TD
         Formatter[提示词格式化]:::process
     end
 
-    %% 数据流动方向
     UI --> Compiler
     DNA --> Compiler
     Compiler --> Formatter
@@ -64,41 +62,20 @@ graph TD
     LLM --> Plot
     LLM --> Blue
     
-    %% 闭环同步
     LLM -- 提取信息 --> Sum
     Sum -- 注入上下文 --> Compiler
 ```
-
-**【如何看懂这张图？】**
-*   **方块 []**：代表一个功能节点。
-*   **实线箭头 -->**：代表数据的传递。
-*   **虚线线箭头 -.->**：代表逻辑上的演进或依赖。
-*   **颜色标注**：蓝色通常代表“静态存储”，紫色代表“外部服务 (AI)”，橙色代表“中间处理逻辑”。
 
 ---
 
 ## 🛠️ 第三部分：AI 上下文工程 (Context Engineering)
 
-这是 Story Mind 最核心的技术点：**变量替换逻辑**。
-
 ### 1. 什么是变量替换？
-在代码 `constants.ts` 中，你会看到很多 `{character_dynamics}` 这样的占位符。这就像填空题：
-1.  **模板**：“在一个名为 {world_name} 的世界里，生活着一个叫 {hero_name} 的人。”
-2.  **变量组装**：系统从状态库里抓取数据：`world_name = "赛博荒漠"`, `hero_name = "阿强"`。
-3.  **最终交付**：AI 收到的是完整的句子，它完全不需要知道后台数据是怎么存的。
-
-### 2. 上下文同步 (Context Sync) ── 解决 AI “失忆”
-**架构难点**：写到第 100 章时，AI 忘了第 1 章设定的伏笔怎么办？
-**解决方案**：
-*   **状态回环 (State Feedback)**：每写完一章，系统会让 AI 对该章进行“压缩总结”。
-*   **全局摘要更新**：将这个总结归档到 `Global Summary` 中。
-*   **动态注入**：写下一章时，强制把这个 `Global Summary` 塞进 Prompt。
+在代码 `constants.ts` 中，你会看到很多 `{character_dynamics}` 这样的占位符。这就像填空题：系统根据您的设定，实时把这些括号里的东西替换成具体的故事内容。
 
 ---
 
 ## 🎨 第四部分：Mermaid 绘图速成 (Mermaid Masterclass)
-
-如果你想画出像 Story Mind 这样专业的图，记住以下三个最常用模版：
 
 ### 1. 流程图 (Flowchart) —— 表达“先后顺序”
 ```mermaid
@@ -120,9 +97,10 @@ sequenceDiagram
 ---
 
 ## 🚀 架构师总结
-一个好的架构图不是为了好看，而是为了**“让哪怕不懂代码的人，看图就能明白系统是怎么跑起来的”**。
-*   **第一步**：理清输入和输出。
-*   **第二步**：定义中间的数据中转站（Repository）。
-*   **第三步**：用双箭线表达交互逻辑。
+在 **Antigravity** 环境中工作，架构设计不再是纸上谈兵。作为一个深度的 AI 开发环境，这里的一切工具（包括我，Antigravity AI）都是为了辅助您实现从“点子”到“代码”的快速转化。
 
-恭喜你！读到这里，你已经不仅是 Story Mind 的用户，更是一名 AI 产品架构的入门级学习者了。
+*   **第一步**：理清输入和输出。
+*   **第二步**：定义中间的数据中转站。
+*   **第三步**：利用 Antigravity 的原生能力进行逻辑验证。
+
+恭喜你！读到这里，你已经踏上了成为 AI 产品架构师的旅程。
