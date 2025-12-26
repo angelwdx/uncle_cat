@@ -1229,6 +1229,7 @@ export default function App() {
             const latestArchive = findLatestStateArchive(currentChapterNum);
 
             variables = {
+                STORY_DNA: String(generatedData.dna || "暂无核心DNA"),
                 novel_number: currentChapterNum,
                 chapter_title: chapterTitle,
                 chapter_role: chapterRole,
@@ -1250,7 +1251,7 @@ export default function App() {
                 global_summary: latestArchive.globalSummary,
                 // 优化前文截取：扩大截取窗口至1500字，为AI提供更充足的末尾细节
                 previous_chapter_excerpt: previousContent.length > 1500 ? `...${previousContent.slice(-1500)}` : previousContent,
-                previous_chapter_summary: latestArchive.chapterSummary || "暂无摘要",
+                chapter_summary: latestArchive.chapterSummary || "暂无摘要",
                 next_chapter_number: currentChapterNum + 1,
                 next_chapter_title: `第${currentChapterNum + 1}章`,
                 next_chapter_purpose: nextChapterPurpose
