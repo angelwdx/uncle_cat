@@ -1,0 +1,28 @@
+{
+  // 保存时自动格式化
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+
+  // Tailwind CSS 4.0 配置
+  "tailwindCSS.experimental.classRegex": [
+    ["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*) (?:'|\"|`)"],
+    ["twMerge\\(([^)]*)\\)", "(?:'|\"|`)([^']*) (?:'|\"|`)"]
+  ],
+  "tailwindCSS.includeLanguages": {
+    "plaintext": "html",
+    "javascript": "javascript",
+    "typescriptreact": "typescriptreact"
+  },
+
+  // 解决 Tailwind 4 的 @theme 和 @import 警告
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+
+  // 提升 React/JSX 开发体验
+  "emmet.includeLanguages": {
+    "javascript": "javascriptreact"
+  },
+  "javascript.preferences.importModuleSpecifier": "non-relative",
+  "typescript.preferences.importModuleSpecifier": "non-relative"
+}
