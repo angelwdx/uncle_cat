@@ -51,6 +51,7 @@ import {
   PlotCritiqueModal,
 } from './components/Modals';
 import { useAlert } from './components/CustomAlert';
+import MarkdownEditor from './components/MarkdownEditor';
 
 // 定义环境变量类型，用于控制是否显示提示词管理功能
 declare const __HIDE_PROMPT_MANAGEMENT__: boolean;
@@ -137,6 +138,9 @@ export default function App() {
     viewChapter: 1,
     selectedTheme: null,
   });
+
+  // 编辑模式状态
+  const [isEditing, setIsEditing] = useState(false);
 
   // 文件输入元素引用，用于导入功能
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -443,6 +447,27 @@ export default function App() {
       .trim();
 
     return clean;
+  };
+
+  // 处理保存编辑内容
+  const handleSaveContent = (content: string) => {
+    const currentStepId = STEPS[currentStep].id as keyof GeneratedData;
+    setGeneratedData((prev) => ({
+      ...prev,
+      [currentStepId]: content,
+    }));
+    setIsEditing(false);
+    showAlert('内容已更新保存', 'success');
+  };
+
+  // 处理开始编辑
+  const handleStartEdit = () => {
+    setIsEditing(true);
+  };
+
+  // 处理取消编辑
+  const handleCancelEdit = () => {
+    setIsEditing(false);
   };
 
   // 解析AI生成的基础设定和核心DNA
@@ -1789,17 +1814,25 @@ export default function App() {
                 </button>
               )}
 
-              {content && (
-                <button
-                  onClick={() =>
-                    openCustomModal(STEPS[currentStep].title, (val) =>
-                      handleGenerateStep(currentStepId, val)
-                    )
-                  }
-                  className="flex items-center px-3 py-1.5 bg-white hover:bg-gray-50 text-gray-700 rounded-lg transition-colors border border-gray-200 min-h-[36px] justify-center shadow-sm text-sm font-medium"
-                >
-                  <RefreshCw size={14} className="mr-2" /> 重写/修改
-                </button>
+              {content && !isEditing && (
+                <>
+                  <button
+                    onClick={handleStartEdit}
+                    className="flex items-center px-3 py-1.5 bg-white hover:bg-gray-50 text-stone-700 rounded-lg transition-colors border border-gray-200 min-h-[36px] justify-center shadow-sm text-sm font-medium"
+                  >
+                    <PenTool size={14} className="mr-2" /> 编辑
+                  </button>
+                  <button
+                    onClick={() =>
+                      openCustomModal(STEPS[currentStep].title, (val) =>
+                        handleGenerateStep(currentStepId, val)
+                      )
+                    }
+                    className="flex items-center px-3 py-1.5 bg-white hover:bg-gray-50 text-gray-700 rounded-lg transition-colors border border-gray-200 min-h-[36px] justify-center shadow-sm text-sm font-medium"
+                  >
+                    <RefreshCw size={14} className="mr-2" /> 重写/修改
+                  </button>
+                </>
               )}
               <button
                 onClick={() => handleGenerateStep(currentStepId)}
@@ -1827,6 +1860,12 @@ export default function App() {
                   {loadingMessage || 'AI 正在深度思考构建中...'}
                 </p>
               </div>
+            ) : isEditing ? (
+              <MarkdownEditor
+                initialContent={content as string}
+                onSave={handleSaveContent}
+                onCancel={handleCancelEdit}
+              />
             ) : content ? (
               <div className="max-w-4xl mx-auto space-y-6">
                 <div>
@@ -2050,17 +2089,25 @@ export default function App() {
                 {isPlotCritiquing ? '诊疗中...' : '深度问诊'}
               </button>
             )}
-            {content && (
-              <button
-                onClick={() =>
-                  openCustomModal(STEPS[currentStep].title, (val) =>
-                    handleGenerateStep(currentStepId, val)
-                  )
-                }
-                className="flex items-center px-3 py-1.5 bg-white hover:bg-gray-50 text-gray-700 rounded-lg transition-colors border border-gray-200 min-h-[36px] justify-center shadow-sm text-sm font-medium"
-              >
-                <RefreshCw size={14} className="mr-2" /> 重写/修改
-              </button>
+            {content && !isEditing && (
+              <>
+                <button
+                  onClick={handleStartEdit}
+                  className="flex items-center px-3 py-1.5 bg-white hover:bg-gray-50 text-stone-700 rounded-lg transition-colors border border-gray-200 min-h-[36px] justify-center shadow-sm text-sm font-medium"
+                >
+                  <PenTool size={14} className="mr-2" /> 编辑
+                </button>
+                <button
+                  onClick={() =>
+                    openCustomModal(STEPS[currentStep].title, (val) =>
+                      handleGenerateStep(currentStepId, val)
+                    )
+                  }
+                  className="flex items-center px-3 py-1.5 bg-white hover:bg-gray-50 text-gray-700 rounded-lg transition-colors border border-gray-200 min-h-[36px] justify-center shadow-sm text-sm font-medium"
+                >
+                  <RefreshCw size={14} className="mr-2" /> 重写/修改
+                </button>
+              </>
             )}
             <button
               onClick={() => handleGenerateStep(currentStepId)}
@@ -2088,6 +2135,12 @@ export default function App() {
                 {loadingMessage || 'AI 正在深度思考构建中...'}
               </p>
             </div>
+          ) : isEditing ? (
+            <MarkdownEditor
+              initialContent={content as string}
+              onSave={handleSaveContent}
+              onCancel={handleCancelEdit}
+            />
           ) : content ? (
             <div className="max-w-4xl mx-auto space-y-6">
               <div className="flex justify-end mb-4 group opacity-0 hover:opacity-100 transition-opacity">

@@ -1,9 +1,56 @@
-
-
 export const TAGS = {
-  male: ['全部', '东方仙侠', '科幻末世', '都市日常', '都市修真', '都市高武', '历史古代', '战神赘婿', '都市种田', '传统玄幻', '历史脑洞', '悬疑脑洞', '都市脑洞', '游戏体育', '抗战谍战', '动漫衍生', '男频衍生'],
-  female: ['全部', '现代言情', '古代言情', '年代种田', '悬疑灵异', '玄幻脑洞', '豪门总裁', '宫斗宅斗', '穿越重生', '快穿系统', '种田经商', '仙侠奇缘', '青春校园', '悬疑推理', '动漫衍生'],
-  danmei: ['全部', '现代纯爱', '古代纯爱', '幻想纯爱', '校园纯爱', '悬疑纯爱', '电竞网游', '星际ABO', '快穿系统', '灵异神怪', '娱乐圈', '无限流', '主攻视点', '主受视点']
+  male: [
+    '全部',
+    '东方仙侠',
+    '科幻末世',
+    '都市日常',
+    '都市修真',
+    '都市高武',
+    '历史古代',
+    '战神赘婿',
+    '都市种田',
+    '传统玄幻',
+    '历史脑洞',
+    '悬疑脑洞',
+    '都市脑洞',
+    '游戏体育',
+    '抗战谍战',
+    '动漫衍生',
+    '男频衍生',
+  ],
+  female: [
+    '全部',
+    '现代言情',
+    '古代言情',
+    '年代种田',
+    '悬疑灵异',
+    '玄幻脑洞',
+    '豪门总裁',
+    '宫斗宅斗',
+    '穿越重生',
+    '快穿系统',
+    '种田经商',
+    '仙侠奇缘',
+    '青春校园',
+    '悬疑推理',
+    '动漫衍生',
+  ],
+  danmei: [
+    '全部',
+    '现代纯爱',
+    '古代纯爱',
+    '幻想纯爱',
+    '校园纯爱',
+    '悬疑纯爱',
+    '电竞网游',
+    '星际ABO',
+    '快穿系统',
+    '灵异神怪',
+    '娱乐圈',
+    '无限流',
+    '主攻视点',
+    '主受视点',
+  ],
 };
 
 export const STORY_TONES = [
@@ -18,7 +65,7 @@ export const STORY_TONES = [
   { label: '甜宠[撒糖]', value: '甜宠' },
   { label: '热血[激昂]', value: '热血' },
   { label: '诡异[怪诞]', value: '诡异' },
-  { label: '史诗[宏大]', value: '史诗' }
+  { label: '史诗[宏大]', value: '史诗' },
 ];
 
 export const ENDING_TYPES = [
@@ -37,43 +84,163 @@ export const ENDING_TYPES = [
   { label: '大梦[虚幻]', value: '大梦' },
   { label: '伏笔[续作]', value: '伏笔' },
   { label: '留白[无言]', value: '留白' },
-  { label: '宿命[轮回]', value: '宿命' }
+  { label: '宿命[轮回]', value: '宿命' },
 ];
 
 export const PLOT_STRUCTURES = [
-  { id: 1, name: '三幕式结构 (Three-Act Structure)', description: '第一幕：铺垫与诱因\n第二幕：对抗与转折\n第三幕：高潮与结局' },
-  { id: 2, name: '四幕式结构 (Four-Act Structure)', description: '一：设定诱因\n二：尝试与困境\n三：危机升级\n四：高潮解决' },
-  { id: 3, name: '五幕结构 (Five-Act Structure)', description: '1.暴露\n2.上升动作\n3.高潮\n4.下降动作\n5.结局' },
-  { id: 4, name: '英雄之旅 (The Hero’s Journey)', description: '平凡世界→召唤→试炼→深渊→奖励→回归→新生' },
-  { id: 5, name: '救猫咪节拍表 (Save the Cat!)', description: '开场→主题→诱因→争执→第二幕→中点→一无所有→灵魂黑夜→第三幕→高潮→终场' },
-  { id: 6, name: '序列法 (Sequence Approach)', description: '八个15分钟序列：\n设定/诱因/尝试/困境/中点/低谷/最后障碍/结局' },
-  { id: 7, name: '故事圆环 (Story Circle)', description: '舒适区→渴望→出发→适应→得到→代价→回归→改变' },
-  { id: 8, name: '角色弧 (Character Arc)', description: '缺陷起点→触发事件→内心挣扎→关键决策→成长蜕变→自我实现' },
-  { id: 9, name: '卡片法 (Index Cards)', description: '场景碎片化\n按时间/动机/人物灵活组合\n构建非传统线性流' },
-  { id: 10, name: '多线嵌套 (Nested/Multiple)', description: '主线A + 主线B + 副线C\n多维度交织\n节点汇聚与共振' },
-  { id: 11, name: '非线性环状 (Nonlinear Loop)', description: '跳跃时空\n首尾呼应\n关键点重叠\n视角拼图' },
-  { id: 12, name: '情感曲线 (Emotional Arc)', description: '情感基线→波动触发→冲突递进→情绪低谷/高峰→释放与和解' },
-  { id: 13, name: '事件驱动 (Event-Driven)', description: '大事件1(起点)→大事件2(反转)→大事件3(危机)→高潮事件→余波' },
+  {
+    id: 1,
+    name: '三幕式结构 (Three-Act Structure)',
+    description: '第一幕：铺垫与诱因\n第二幕：对抗与转折\n第三幕：高潮与结局',
+  },
+  {
+    id: 2,
+    name: '四幕式结构 (Four-Act Structure)',
+    description: '一：设定诱因\n二：尝试与困境\n三：危机升级\n四：高潮解决',
+  },
+  {
+    id: 3,
+    name: '五幕结构 (Five-Act Structure)',
+    description: '1.暴露\n2.上升动作\n3.高潮\n4.下降动作\n5.结局',
+  },
+  {
+    id: 4,
+    name: '英雄之旅 (The Hero’s Journey)',
+    description: '平凡世界→召唤→试炼→深渊→奖励→回归→新生',
+  },
+  {
+    id: 5,
+    name: '救猫咪节拍表 (Save the Cat!)',
+    description: '开场→主题→诱因→争执→第二幕→中点→一无所有→灵魂黑夜→第三幕→高潮→终场',
+  },
+  {
+    id: 6,
+    name: '序列法 (Sequence Approach)',
+    description: '八个15分钟序列：\n设定/诱因/尝试/困境/中点/低谷/最后障碍/结局',
+  },
+  {
+    id: 7,
+    name: '故事圆环 (Story Circle)',
+    description: '舒适区→渴望→出发→适应→得到→代价→回归→改变',
+  },
+  {
+    id: 8,
+    name: '角色弧 (Character Arc)',
+    description: '缺陷起点→触发事件→内心挣扎→关键决策→成长蜕变→自我实现',
+  },
+  {
+    id: 9,
+    name: '卡片法 (Index Cards)',
+    description: '场景碎片化\n按时间/动机/人物灵活组合\n构建非传统线性流',
+  },
+  {
+    id: 10,
+    name: '多线嵌套 (Nested/Multiple)',
+    description: '主线A + 主线B + 副线C\n多维度交织\n节点汇聚与共振',
+  },
+  {
+    id: 11,
+    name: '非线性环状 (Nonlinear Loop)',
+    description: '跳跃时空\n首尾呼应\n关键点重叠\n视角拼图',
+  },
+  {
+    id: 12,
+    name: '情感曲线 (Emotional Arc)',
+    description: '情感基线→波动触发→冲突递进→情绪低谷/高峰→释放与和解',
+  },
+  {
+    id: 13,
+    name: '事件驱动 (Event-Driven)',
+    description: '大事件1(起点)→大事件2(反转)→大事件3(危机)→高潮事件→余波',
+  },
   { id: 14, name: '单元剧/短片集 (Anthology)', description: '独立单元剧\n单集闭环\n隐形主题串联' },
-  { id: 15, name: '开放式/碎片化 (Open/Fragmented)', description: '意象碎片\n无明确结局\n留白与思考' },
+  {
+    id: 15,
+    name: '开放式/碎片化 (Open/Fragmented)',
+    description: '意象碎片\n无明确结局\n留白与思考',
+  },
   { id: 16, name: '日记体 (Diary/First-person)', description: '主观独白\n回忆碎片\n心理演变实录' },
-  { id: 17, name: '并行蒙太奇 (Parallel Montage)', description: '线索A与线索B\n同步推进\n节奏对切\n高潮汇流' },
+  {
+    id: 17,
+    name: '并行蒙太奇 (Parallel Montage)',
+    description: '线索A与线索B\n同步推进\n节奏对切\n高潮汇流',
+  },
   { id: 18, name: '实时结构 (Real-Time)', description: '分秒必争\n实时推进\n极限倒计时' },
-  { id: 19, name: '三点转折 (Three-Point Turning)', description: '1.突发事件(打破平衡)\n2.中点转折(局势逆转)\n3.终极爆发(解决问题)' },
-  { id: 20, name: '普罗普功能 (Propp’s Functions)', description: '离家→考验→获得助力→战胜恶人→归来→婚礼 (经典童话范式)' },
-  { id: 21, name: '雪花法 (Snowflake Method)', description: '一句话→一段落→人物表→场景卡→分层扩充细节' },
-  { id: 22, name: '分形嵌套 (Fractal Structure)', description: '大故事套小故事\n层层自相似\n宏观与微观呼应' },
-  { id: 23, name: '音乐剧结构 (Musical Structure)', description: '开场曲→愿望歌→冲突曲→高潮重唱→终曲 (节奏驱动)' },
-  { id: 24, name: '意象拼贴 (Montage/Collage)', description: '跨时空意象\n氛围大于叙事\n自由联想拼贴' },
-  { id: 25, name: '循环往复 (Looping Structure)', description: '时间/事件死循环\n每次微小改变\n打破循环即结局' },
-  { id: 26, name: '诗性结构 (Poetic Structure)', description: '主题复现\n隐喻与象征\n淡化因果逻辑\n强化情感体验' },
-  { id: 27, name: '任务型 (Quest Structure)', description: '接任务→组队→打怪升级→完成/失败→关系质变' },
-  { id: 28, name: '多重梦境 (Dataset/Reality)', description: '现实vs梦境\n层层深入\n真假难辨\n逻辑迷宫' },
-  { id: 29, name: '线性解谜 (Linear Mystery)', description: '案发→线索→推理→反转→真相 (经典侦探流)' },
-  { id: 30, name: '起承转合 (Kishōtenketsu)', description: '起(开端)→承(承接/铺垫)→转(突变/高潮)→合(收束/余韵) (东方经典)' },
-  { id: 31, name: '七点式 (Seven-Point)', description: '钩子→转折1→积压1→中点→积压2→转折2→解决 (丹·威尔斯)' },
-  { id: 32, name: '菲泰格金字塔 (Freytag’s Pyramid)', description: '铺垫→上升动作→高潮(顶点)→回落动作→灾难/结局 (经典悲剧)' },
-  { id: 33, name: '处女之旅 (The Virgin’s Promise)', description: '依附→代价→机会→混乱→流浪→对抗→觉醒 (女性/内在成长)' }
+  {
+    id: 19,
+    name: '三点转折 (Three-Point Turning)',
+    description: '1.突发事件(打破平衡)\n2.中点转折(局势逆转)\n3.终极爆发(解决问题)',
+  },
+  {
+    id: 20,
+    name: '普罗普功能 (Propp’s Functions)',
+    description: '离家→考验→获得助力→战胜恶人→归来→婚礼 (经典童话范式)',
+  },
+  {
+    id: 21,
+    name: '雪花法 (Snowflake Method)',
+    description: '一句话→一段落→人物表→场景卡→分层扩充细节',
+  },
+  {
+    id: 22,
+    name: '分形嵌套 (Fractal Structure)',
+    description: '大故事套小故事\n层层自相似\n宏观与微观呼应',
+  },
+  {
+    id: 23,
+    name: '音乐剧结构 (Musical Structure)',
+    description: '开场曲→愿望歌→冲突曲→高潮重唱→终曲 (节奏驱动)',
+  },
+  {
+    id: 24,
+    name: '意象拼贴 (Montage/Collage)',
+    description: '跨时空意象\n氛围大于叙事\n自由联想拼贴',
+  },
+  {
+    id: 25,
+    name: '循环往复 (Looping Structure)',
+    description: '时间/事件死循环\n每次微小改变\n打破循环即结局',
+  },
+  {
+    id: 26,
+    name: '诗性结构 (Poetic Structure)',
+    description: '主题复现\n隐喻与象征\n淡化因果逻辑\n强化情感体验',
+  },
+  {
+    id: 27,
+    name: '任务型 (Quest Structure)',
+    description: '接任务→组队→打怪升级→完成/失败→关系质变',
+  },
+  {
+    id: 28,
+    name: '多重梦境 (Dataset/Reality)',
+    description: '现实vs梦境\n层层深入\n真假难辨\n逻辑迷宫',
+  },
+  {
+    id: 29,
+    name: '线性解谜 (Linear Mystery)',
+    description: '案发→线索→推理→反转→真相 (经典侦探流)',
+  },
+  {
+    id: 30,
+    name: '起承转合 (Kishōtenketsu)',
+    description: '起(开端)→承(承接/铺垫)→转(突变/高潮)→合(收束/余韵) (东方经典)',
+  },
+  {
+    id: 31,
+    name: '七点式 (Seven-Point)',
+    description: '钩子→转折1→积压1→中点→积压2→转折2→解决 (丹·威尔斯)',
+  },
+  {
+    id: 32,
+    name: '菲泰格金字塔 (Freytag’s Pyramid)',
+    description: '铺垫→上升动作→高潮(顶点)→回落动作→灾难/结局 (经典悲剧)',
+  },
+  {
+    id: 33,
+    name: '处女之旅 (The Virgin’s Promise)',
+    description: '依附→代价→机会→混乱→流浪→对抗→觉醒 (女性/内在成长)',
+  },
 ];
 
 export const NARRATIVE_PERSPECTIVES = [
@@ -86,7 +253,7 @@ export const NARRATIVE_PERSPECTIVES = [
   { label: '意识流[内心]', value: '意识流' },
   { label: '伪纪录片[档案]', value: '伪纪录片' },
   { label: '群像[全景]', value: '群像' },
-  { label: '不可靠叙述[悬疑]', value: '不可靠叙述' }
+  { label: '不可靠叙述[悬疑]', value: '不可靠叙述' },
 ];
 
 export const THEME_LIBRARY_CONTENT = `
@@ -576,8 +743,8 @@ Prompt: 网文选题·生死判官 (V4.0 独家公式版)
 2. **资源稀缺性设计**：找出这个世界中最稀缺的资源，那是所有冲突的源头。
 3. **符号视觉化**：为抽象的法则设计具体的视觉符号，增强读者的画面感。
 
-## 📥 输入参数
-- 核心DNA：{STORY_DNA} | 角色体系：{character_dynamics}
+- 角色体系：{character_dynamics} (❗核心准则：文中的角色姓名、称号必须严格完全引用此处的设定，禁止使用任何其他名字)
+- 核心DNA：{STORY_DNA}
 - 修改指令：{custom_instruction}
 
 ## 🏗️ 生成结果
@@ -606,8 +773,8 @@ Prompt: 网文选题·生死判官 (V4.0 独家公式版)
 
 ## 📥 输入参数
 - 核心素材：
+  - 角色动力学: {character_dynamics} (❗核心准则：文中的角色姓名必须严格完全引用此处的设定)
   - DNA: {STORY_DNA}
-  - 角色动力学: {character_dynamics}
   - 世界观: {world_building}
 - 选定结构：{plot_structure}
 - 修改要求：{custom_instruction}
@@ -627,8 +794,8 @@ Prompt: 网文选题·生死判官 (V4.0 独家公式版)
 3. **三位一体**：每章必须同时满足：推进主线、展示人设、埋设伏笔。
 
 ## 📥 输入参数
+- 角色动力学: {character_dynamics} (❗核心准则：文中的角色姓名必须严格完全引用此处的设定)
 - 核心DNA：{STORY_DNA}
-- 角色动力学: {character_dynamics}
 - 世界观: {world_building}
 - 情节架构: {plot_architecture}
 - 章节规模：共 {number_of_chapters} 章
@@ -819,7 +986,7 @@ Prompt: 网文选题·生死判官 (V4.0 独家公式版)
 - 叙事视角：{perspective}
 - 每章字数：{word_count}
 - 自定义要求：{custom_requirements}
-`
+`,
 };
 
 export const THEME_MATCH_PROMPT = `
