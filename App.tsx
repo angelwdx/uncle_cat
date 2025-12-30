@@ -19,6 +19,9 @@ import {
   LayoutDashboard,
   LayoutList,
   ArrowRight,
+  Type, // Added for character name management
+  MessageSquare,
+  Activity as Pulse,
 } from 'lucide-react';
 import {
   ApiConfig,
@@ -52,18 +55,19 @@ import {
 } from './components/Modals';
 import { useAlert } from './components/CustomAlert';
 import MarkdownEditor from './components/MarkdownEditor';
+import CharacterNameModal, { Replacement } from './components/CharacterNameModal';
 
 // 定义环境变量类型，用于控制是否显示提示词管理功能
 declare const __HIDE_PROMPT_MANAGEMENT__: boolean;
 
 const STEPS: StepDefinition[] = [
   { id: 'init', title: '创作初始化', icon: BookOpen },
-  { id: 'dna', title: '核心DNA', icon: Activity, promptKey: 'DNA' },
+  { id: 'dna', title: '核心DNA', icon: Pulse, promptKey: 'DNA' },
   { id: 'characters', title: '角色动力学', icon: Users, promptKey: 'CHARACTERS' },
   { id: 'world', title: '世界观', icon: Globe, promptKey: 'WORLD' },
   { id: 'plot', title: '情节架构', icon: GitMerge, promptKey: 'PLOT' },
   { id: 'blueprint', title: '章节蓝图', icon: List, promptKey: 'BLUEPRINT' },
-  { id: 'state', title: '角色状态库', icon: Activity, promptKey: 'STATE_INIT' },
+  { id: 'state', title: '角色状态库', icon: Pulse, promptKey: 'STATE_INIT' },
   { id: 'writing', title: '正文创作', icon: PenTool, promptKey: 'CHAPTER_1' },
 ];
 
@@ -141,6 +145,7 @@ export default function App() {
 
   // 编辑模式状态
   const [isEditing, setIsEditing] = useState(false);
+  const [isNameModalOpen, setIsNameModalOpen] = useState(false);
 
   // 文件输入元素引用，用于导入功能
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -468,6 +473,88 @@ export default function App() {
   // 处理取消编辑
   const handleCancelEdit = () => {
     setIsEditing(false);
+  };
+
+  // 处理角色名称批量替换
+  const handleReplaceNames = (replacements: Replacement[]) => {
+    setGeneratedData((prev) => {
+      const newData = { ...prev };
+
+      // Group replacements by stepId to handle string manipulation correctly
+      // Note: We're doing naive replacement here. Since indices shift after replacement,
+      // and we are provided originalText, we should probably just use replaceAll
+      // but only for the parts that were confirmed.
+      // However, the modal returns individual accepted instances.
+      // To keep it simple and safe given we have the confirmation:
+      // We will perform exact text replacements for the confirmed matches.
+      // CAUTION: If the same name appears multiple times, we need to be careful.
+      // Let's iterate steps and replace.
+      // The implementation in modal sends us a list of "what to replace".
+      // But string indices might shift if we process sequentially on the same string.
+      // A better approach for this simple version:
+      // Since it's a batch replace of "NameA" -> "NameB", and the user UNCHECKED specific bad matches,
+      // it's tricky to map the "unchecked" back to text positions if we don't track indices perfectly.
+
+      // Let's simplify: We assume the user confirmed "Yes, replace NameA with NameB in these steps".
+      // But if there are false positives (NameA used in another context), we need to avoid them.
+      // The Modal gives `contextIndex`. We should sort replacements by index (descending)
+      // and apply them via string slicing to avoid index shift issues.
+
+      const replacementsByStep: Record<string, Replacement[]> = {};
+      replacements.forEach((r) => {
+        if (!replacementsByStep[r.stepId]) replacementsByStep[r.stepId] = [];
+        replacementsByStep[r.stepId].push(r);
+      });
+
+      Object.entries(replacementsByStep).forEach(([stepId, stepReplacements]) => {
+        // Sort by index descending to replace from end to start to maintain indices
+        stepReplacements.sort((a, b) => b.contextIndex - a.contextIndex);
+
+        if (stepId.startsWith('chapter-')) {
+          const match = stepId.match(/^chapter-(\d+)-(title|content)$/);
+          if (match) {
+            const idx = parseInt(match[1]);
+            const field = match[2] as 'title' | 'content';
+            if (newData.chapters[idx]) {
+              let content = newData.chapters[idx][field] || '';
+              stepReplacements.forEach((r) => {
+                if (r.contextIndex >= 0 && r.contextIndex < content.length) {
+                  content =
+                    content.substring(0, r.contextIndex) +
+                    r.newText +
+                    content.substring(r.contextIndex + r.originalText.length);
+                }
+              });
+              const newChapters = [...newData.chapters];
+              newChapters[idx] = { ...newChapters[idx], [field]: content };
+              newData.chapters = newChapters;
+            }
+          }
+        } else {
+          const key = stepId as keyof GeneratedData;
+          const value = newData[key];
+
+          if (typeof value === 'string') {
+            let content = value;
+            stepReplacements.forEach((r) => {
+              if (r.contextIndex >= 0 && r.contextIndex < content.length) {
+                content =
+                  content.substring(0, r.contextIndex) +
+                  r.newText +
+                  content.substring(r.contextIndex + r.originalText.length);
+              }
+            });
+            (newData as any)[key] = content;
+          }
+        }
+      });
+
+      return newData;
+    });
+
+    // We no longer show a global alert here because CharacterNameModal
+    // already shows an internal success message, and a global popup is distracting during multi-replaces.
+    // showAlert(`成功替换了 ${replacements.length} 处引用`, 'success');
   };
 
   // 解析AI生成的基础设定和核心DNA
@@ -1801,7 +1888,7 @@ export default function App() {
                 <button
                   onClick={handleJudge}
                   disabled={isJudging}
-                  className={`px-3 py-1.5 bg-white border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 rounded-lg flex items-center transition-all ${
+                  className={`px-3 py-1.5 bg-white border border-gray-200 text-stone-700 hover:bg-gray-50 hover:border-gray-300 rounded-lg flex items-center transition-all ${
                     isJudging ? 'opacity-50 cursor-not-allowed' : 'shadow-sm'
                   } min-h-[36px] justify-center font-serif text-sm font-medium`}
                 >
@@ -1818,7 +1905,7 @@ export default function App() {
                 <>
                   <button
                     onClick={handleStartEdit}
-                    className="flex items-center px-3 py-1.5 bg-white hover:bg-gray-50 text-stone-700 rounded-lg transition-colors border border-gray-200 min-h-[36px] justify-center shadow-sm text-sm font-medium"
+                    className="flex items-center px-3 py-1.5 bg-white hover:bg-gray-50 text-stone-700 rounded-lg transition-colors border border-gray-200 min-h-[36px] justify-center shadow-sm font-serif text-sm font-medium"
                   >
                     <PenTool size={14} className="mr-2" /> 编辑
                   </button>
@@ -1828,9 +1915,9 @@ export default function App() {
                         handleGenerateStep(currentStepId, val)
                       )
                     }
-                    className="flex items-center px-3 py-1.5 bg-white hover:bg-gray-50 text-gray-700 rounded-lg transition-colors border border-gray-200 min-h-[36px] justify-center shadow-sm text-sm font-medium"
+                    className="flex items-center px-3 py-1.5 bg-white hover:bg-gray-50 text-stone-700 rounded-lg transition-colors border border-gray-200 min-h-[36px] justify-center shadow-sm font-serif text-sm font-medium"
                   >
-                    <RefreshCw size={14} className="mr-2" /> 重写/修改
+                    <MessageSquare size={14} className="mr-2" /> 提意见
                   </button>
                 </>
               )}
@@ -1918,7 +2005,7 @@ export default function App() {
         <div className="h-full flex flex-col space-y-6">
           <div className="flex flex-wrap items-center justify-between bg-white px-4 py-3 rounded-xl border border-gray-100 shadow-sm gap-3">
             <h2 className="text-lg font-serif font-bold text-gray-900 flex items-center">
-              <Activity className="mr-2 text-gray-400" size={18} />
+              <Pulse className="mr-2 text-gray-400" size={18} />
               角色状态库
             </h2>
 
@@ -1926,7 +2013,7 @@ export default function App() {
             <div className="hidden sm:flex flex-1 justify-center mx-4">
               <div className="flex items-center text-xs text-gray-500 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200">
                 <span className="mr-2">💡</span> 提示：完成章节创作后，点击{' '}
-                <Activity size={14} className="inline-block mx-1" /> 更新角色状态
+                <Pulse size={14} className="inline-block mx-1" /> 更新角色状态
               </div>
             </div>
 
@@ -2075,7 +2162,7 @@ export default function App() {
               <button
                 onClick={handlePlotCritique}
                 disabled={isPlotCritiquing || !generatedData.plot}
-                className={`px-3 py-1.5 bg-white border border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-300 rounded-lg flex items-center transition-all ${
+                className={`px-3 py-1.5 bg-white border border-gray-200 text-stone-700 hover:bg-gray-50 hover:border-gray-300 rounded-lg flex items-center transition-all ${
                   isPlotCritiquing || !generatedData.plot
                     ? 'opacity-50 cursor-not-allowed'
                     : 'shadow-sm'
@@ -2091,9 +2178,17 @@ export default function App() {
             )}
             {content && !isEditing && (
               <>
+                {currentStepId === 'characters' && (
+                  <button
+                    onClick={() => setIsNameModalOpen(true)}
+                    className="flex items-center px-3 py-1.5 bg-white hover:bg-stone-50 text-stone-700 rounded-lg transition-colors border border-gray-200 min-h-[36px] justify-center shadow-sm font-serif text-sm font-medium"
+                  >
+                    <Users size={14} className="mr-2" /> 角色管理
+                  </button>
+                )}
                 <button
                   onClick={handleStartEdit}
-                  className="flex items-center px-3 py-1.5 bg-white hover:bg-gray-50 text-stone-700 rounded-lg transition-colors border border-gray-200 min-h-[36px] justify-center shadow-sm text-sm font-medium"
+                  className="flex items-center px-3 py-1.5 bg-white hover:bg-gray-50 text-stone-700 rounded-lg transition-colors border border-gray-200 min-h-[36px] justify-center shadow-sm font-serif text-sm font-medium"
                 >
                   <PenTool size={14} className="mr-2" /> 编辑
                 </button>
@@ -2103,12 +2198,13 @@ export default function App() {
                       handleGenerateStep(currentStepId, val)
                     )
                   }
-                  className="flex items-center px-3 py-1.5 bg-white hover:bg-gray-50 text-gray-700 rounded-lg transition-colors border border-gray-200 min-h-[36px] justify-center shadow-sm text-sm font-medium"
+                  className="flex items-center px-3 py-1.5 bg-white hover:bg-gray-50 text-stone-700 rounded-lg transition-colors border border-gray-200 min-h-[36px] justify-center shadow-sm font-serif text-sm font-medium"
                 >
-                  <RefreshCw size={14} className="mr-2" /> 重写/修改
+                  <MessageSquare size={14} className="mr-2" /> 提意见
                 </button>
               </>
             )}
+
             <button
               onClick={() => handleGenerateStep(currentStepId)}
               disabled={isGenerating}
@@ -2245,6 +2341,14 @@ export default function App() {
         plotStructures={PLOT_STRUCTURES}
         selectedStructure={selectedPlotStructure}
         onSelectStructure={setSelectedPlotStructure}
+      />
+
+      <CharacterNameModal
+        isOpen={isNameModalOpen}
+        onClose={() => setIsNameModalOpen(false)}
+        content={generatedData.characters || ''}
+        allData={generatedData}
+        onReplace={handleReplaceNames}
       />
 
       {/* Mobile Sidebar Overlay */}
